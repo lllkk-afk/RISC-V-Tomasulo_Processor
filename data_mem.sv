@@ -2,7 +2,8 @@
 
 
 module data_mem(
-    input  logic        clk,we,
+    input  logic        clk,
+    input  logic        we,
     input  logic [31:0] addr, writedata,
     output logic [31:0] readdata
     );

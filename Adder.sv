@@ -8,7 +8,7 @@ module Adder(
     input logic [3:0] Tag_in,
     input logic [3:0] cdb_tag, // for clearing valid 
     input logic cdb_valid,
-    output logic [3:0] Tag_out,
+    output logic [3:0] Tag_out, // for write back reference
     output logic result_valid,
     output logic [31:0] Result 
     );

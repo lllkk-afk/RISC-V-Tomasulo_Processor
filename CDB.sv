@@ -4,7 +4,8 @@ module CDB (
     input  logic [31:0] adder1_data, adder2_data, adder3_data,
     input  logic [3:0]  adder1_tag,  adder2_tag,  adder3_tag,
     input  logic        adder1_valid, adder2_valid, adder3_valid,
-    input  logic [31:0] multi1_data, multi2_data,
+    input  logic [31:0] multi1_data_lower, multi2_data_lower,
+    input  logic [31:0] multi1_data_higher, multi2_data_higher,
     input  logic [3:0]  multi1_tag,  multi2_tag,
     input  logic        multi1_valid, multi2_valid,
     input  logic [31:0] mem_data,
@@ -33,11 +34,11 @@ always_comb begin
         Tag_out    = adder3_tag;
         Data_valid = 1;
     end else if (multi1_valid) begin
-        Data_out   = multi1_data;
+        Data_out   = multi1_data_lower; //œ»‘›∂®lower
         Tag_out    = multi1_tag;
         Data_valid = 1;
     end else if (multi2_valid) begin
-        Data_out   = multi2_data;
+        Data_out   = multi2_data_lower; 
         Tag_out    = multi2_tag;
         Data_valid = 1;
     end else if (mem_valid) begin
