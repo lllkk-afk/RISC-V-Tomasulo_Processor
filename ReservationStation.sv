@@ -5,14 +5,12 @@ module ReservationStation(
     input logic         clk, reset,
     input logic [4:0]   rs,rt,rd,
     
+    //adder
+    input logic         adder_release1,adder_release2,adder_release3,
     //regfile
     // I seperate into two just to avoid multi-driven problem
-    input logic [31:0]  Aread_data1,Aread_data2,
-    output logic [ 4:0] Aread_addr1,Aread_addr2,
-    output logic        Aread_valid1,Aread_valid2,
-    input logic [31:0]  Lread_data1,Lread_data2,
-    output logic [ 4:0] Lread_addr1,Lread_addr2,
-    output logic        Lread_valid1,Lread_valid2,
+    input logic [31:0]  read_data1,read_data2,
+    output logic [ 4:0] read_addr1,read_addr2,
     output logic [4:0]  Reg_writeaddr,
     output logic [31:0] Reg_writedata,
     output logic        Reg_writevalid,
@@ -87,7 +85,14 @@ module ReservationStation(
     assign Mul_mask = {~MRS[1].Busy,~MRS[0].Busy};
     
     logic [1:0] alloc;
-
+    
+    
+    assign A_stall = (Add_en && (&{ARS[0].Busy,ARS[1].Busy, ARS[2].Busy})) || 
+                 (Mul_en && (&{MRS[0].Busy, MRS[1].Busy}));
+    
+    assign read_addr1 = rs;
+    assign read_addr2 = rt;
+                  
     integer i;
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
@@ -112,7 +117,6 @@ module ReservationStation(
             ARS[2].Tag     <= ADD3;
             MRS[0].Tag     <= MUL1;
             MRS[1].Tag     <= MUL2;
-            A_stall          <= 0;  
             
             //Adder logic
             adder1_start <= 0;
@@ -137,18 +141,11 @@ module ReservationStation(
             multi2_SrcB  <= 0;
             multi1_tag   <= 0;
             multi2_tag   <= 0;
-            Reg_writeaddr <= 0;
-            Reg_writedata <= 0;
             Reg_writevalid <= 0;            
-            Aread_addr1  <= 0;
-            Aread_addr2  <= 0;
-            Aread_valid1  <= 0;
-            Aread_valid2  <= 0;
         end 
         
         else begin
-            Aread_valid1  <= 0;
-            Aread_valid2  <= 0;
+
             adder1_start <= 0;
             adder2_start <= 0;
             adder3_start <= 0;
@@ -157,7 +154,6 @@ module ReservationStation(
             Reg_writevalid <= 0;
             // -------------------- Issue ------------------------
             alloc = 3;
-            A_stall <= 0; 
             if (Add_en) begin
                 casez(Add_mask)
                     3'b??1: alloc = 0;
@@ -166,15 +162,14 @@ module ReservationStation(
                 endcase
                 
                 if (alloc == 3) begin
-                    A_stall <= 1;  // RS is full, stall
                 end 
                 else begin
+                    //RegStat[rs].Qi == cdb_tag && cdb_valid means RegStat is aviailable in the register, we neeed this since RegStat needs one cycle to update
                     if (RegStat[rs].Qi != 0)
                         ARS[alloc].Qj <= RegStat[rs].Qi; 
                     else begin
-                        Aread_addr1    <= rs;
-                        Aread_valid1   <= 1;
-                        ARS[alloc].Vj <= Aread_data1;
+                        
+                        ARS[alloc].Vj <= read_data1;
                         ARS[alloc].Qj <= 0;
                     end
             
@@ -184,19 +179,15 @@ module ReservationStation(
                         if (imminstr) begin
                             ARS[alloc].Vk <= ext_imm;
                             ARS[alloc].Qk <= 0;
-                            Aread_valid2   <= 0;
                         end
                         else begin
-                            Aread_addr2    <= rt;
-                            Aread_valid2   <= 1;
-                            ARS[alloc].Vk <= Aread_data2;
+                            ARS[alloc].Vk <= read_data2;
                             ARS[alloc].Qk <= 0;
                         end
                     end
             
                     ARS[alloc].Busy <= 1;
                     RegStat[rd].Qi <= ARS[alloc].Tag;
-                    A_stall <= 0;  
                 end
             end
             else if (Mul_en) begin
@@ -205,24 +196,19 @@ module ReservationStation(
                     2'b10: alloc = 1;
                 endcase
                 if (alloc == 3) begin
-                    A_stall <= 1;  
                 end 
                 else begin
                     if (RegStat[rs].Qi != 0)
                         MRS[alloc].Qj <= RegStat[rs].Qi; 
                     else begin
-                        Aread_addr1    <= rs;
-                        Aread_valid1   <= 1;
-                        MRS[alloc].Vj <= Aread_data1;
+                        MRS[alloc].Vj <= read_data1;
                         MRS[alloc].Qj <= 0;
                     end
             
                     if (RegStat[rt].Qi != 0)
                         MRS[alloc].Qk <= RegStat[rt].Qi;  
                     else begin
-                        Aread_addr2    <= rt;
-                        Aread_valid2   <= 1;
-                        MRS[alloc].Vk <= Aread_data2;
+                        MRS[alloc].Vk <= read_data2;
                         MRS[alloc].Qk <= 0;
                     end
             
@@ -312,6 +298,7 @@ module ReservationStation(
                     ARS[i].Fired <= 0;
                 end
             end
+              
             
             for (i = 0; i < 2; i ++ ) begin
                 if (MRS[i].Qj == cdb_tag && cdb_valid) begin
@@ -383,18 +370,10 @@ module ReservationStation(
             Store2_valid <= 0;
             Store1_data  <= 0;
             Store2_data  <= 0;
-            Lread_addr1  <= 0;
-            Lread_addr2  <= 0;
-            Lread_valid1  <= 0;
-            Lread_valid2  <= 0;
         end
         // -------------------- Issue ------------------------
        
         else begin
-            Lread_addr1  <= 0;
-            Lread_addr2  <= 0;
-            Lread_valid1  <= 0;
-            Lread_valid2  <= 0;
             Load1_addr   <= 0;
             Load2_addr   <= 0;
             Load1_valid  <= 0;
@@ -420,9 +399,7 @@ module ReservationStation(
                     if (RegStat[rs].Qi != 0)
                         LRS[alloc].Qj <= RegStat[rs].Qi; 
                     else begin
-                        Lread_addr1   <= rs;
-                        LRS[alloc].Vj <= Lread_data1; 
-                        Lread_valid1  <= 1;
+                        LRS[alloc].Vj <= read_data1; 
                         LRS[alloc].Qj <= 0;
                     end
                 
@@ -448,18 +425,14 @@ module ReservationStation(
                     if (RegStat[rs].Qi != 0)
                         SRS[alloc].Qj <= RegStat[rs].Qi; 
                     else begin
-                        Lread_addr1   <= rs;
-                        Lread_valid1  <= 1;
-                        SRS[alloc].Vj <= Lread_data1; 
+                        SRS[alloc].Vj <= read_data1; 
                         SRS[alloc].Qj <= 0;
                     end
                 
                     if (RegStat[rt].Qi != 0)
                         SRS[alloc].Qk <= RegStat[rt].Qi; 
                     else begin
-                        Lread_addr2   <= rt;
-                        Lread_valid2  <= 1;
-                        SRS[alloc].Vk <= Lread_data2; 
+                        SRS[alloc].Vk <= read_data2; 
                         SRS[alloc].Qk <= 0;
                     end
 

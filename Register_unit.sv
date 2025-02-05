@@ -7,8 +7,6 @@ module Register_unit(
     output logic [31:0]  Aread_data2,
     input  logic [ 4:0]  Aread_addr1,
     input  logic [ 4:0]  Aread_addr2,
-    input  logic         Aread_valid1,
-    input logic          Aread_valid2,
     output logic [31:0]  Lread_data1,
     output logic [31:0]  Lread_data2,
     input  logic [ 4:0]  Lread_addr1,
@@ -30,26 +28,7 @@ module Register_unit(
         Aread_data2 = 0;
         Lread_data1 = 0;
         Lread_data2 = 0;
-        if (Aread_valid1) begin
-            RegWrite = 0;
-            readaddr1 = Aread_addr1;
-            Aread_data1 = readdata1;
-        end
-        else if (Aread_valid2) begin
-            RegWrite = 0;
-            readaddr2 = Aread_addr2;
-            Aread_data2 = readdata2;
-        end
-        else if (Lread_valid1) begin
-            RegWrite = 0;
-            readaddr1 = Lread_addr1;
-            Lread_data1 = readdata1;    
-        end
-        else if (Lread_valid2) begin
-            RegWrite = 0;
-            readaddr2 = Lread_addr2;
-            Lread_data2 = readdata2;
-        end
+
         if (Reg_writevalid) begin
             RegWrite = 1;
             writeaddr = Reg_writeaddr;

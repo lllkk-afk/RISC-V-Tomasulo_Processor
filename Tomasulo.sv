@@ -27,6 +27,8 @@ module Tomasulo(
     logic adder1_result_valid, adder2_result_valid, adder3_result_valid;
     logic [31:0] adder1_result, adder2_result, adder3_result;
     
+    logic adder_release1,adder_release2,adder_release3;
+    
     
     //multiplier
     logic multi1_start, multi2_start;
@@ -77,21 +79,15 @@ module Tomasulo(
     logic        Reg_writevalid;
     logic [ 4:0] Reg_writeaddr;
     logic [31:0] Reg_writedata;
-    logic [31:0] Aread_data1;
-    logic [31:0] Aread_data2;
-    logic [ 4:0] Aread_addr1;
-    logic [ 4:0] Aread_addr2;
-    logic        Aread_valid1;
-    logic        Aread_valid2;
-    logic [31:0] Lread_data1;
-    logic [31:0] Lread_data2;
-    logic [ 4:0] Lread_addr1;
-    logic [ 4:0] Lread_addr2;
-    logic        Lread_valid1;
-    logic        Lread_valid2;
+    logic [31:0] read_data1;
+    logic [31:0] read_data2;
+    logic [ 4:0] read_addr1;
+    logic [ 4:0] read_addr2;
 
     
     CDB cdb( 
+        .clk(clk),
+        .reset(reset),
         .adder1_data(adder1_result),
         .adder2_data(adder2_result),
         .adder3_data(adder3_result),
@@ -124,23 +120,20 @@ module Tomasulo(
         .rs(rs),
         .rt(rt),
         .rd(rd),
-
+    
+        //adder
+        .adder_release1(adder_release1),
+        .adder_release2(adder_release2),
+        .adder_release3(adder_release3),
+        
         //regfile
         .Reg_writeaddr(Reg_writeaddr),
         .Reg_writedata(Reg_writedata),
         .Reg_writevalid(Reg_writevalid),
-        .Aread_data1(Aread_data1), 
-        .Aread_data2(Aread_data2), 
-        .Aread_addr1(Aread_addr1), 
-        .Aread_addr2(Aread_addr2), 
-        .Aread_valid1(Aread_valid1),
-        .Aread_valid2(Aread_valid2),
-        .Lread_data1(Lread_data1), 
-        .Lread_data2(Lread_data2), 
-        .Lread_addr1(Lread_addr1), 
-        .Lread_addr2(Lread_addr2),
-        .Lread_valid1(Lread_valid1),
-        .Lread_valid2(Lread_valid2),
+        .read_data1(read_data1), 
+        .read_data2(read_data2), 
+        .read_addr1(read_addr1),
+        .read_addr2(read_addr2),
     
         // Arithmetic
         .Add_en(Add_en),
@@ -218,7 +211,8 @@ module Tomasulo(
         .cdb_valid(cdb_valid),
         .Tag_out(adder1_tag_out),
         .result_valid(adder1_result_valid),
-        .Result(adder1_result)
+        .Result(adder1_result),
+        .adder_release(adder_release1)
     );
     
     Adder adder2(
@@ -232,7 +226,8 @@ module Tomasulo(
         .cdb_valid(cdb_valid),
         .Tag_out(adder2_tag_out),
         .result_valid(adder2_result_valid),
-        .Result(adder2_result)
+        .Result(adder2_result),
+        .adder_release(adder_release2)
     );
    
     Adder adder3(
@@ -246,7 +241,8 @@ module Tomasulo(
         .cdb_valid(cdb_valid),
         .Tag_out(adder3_tag_out),
         .result_valid(adder3_result_valid),
-        .Result(adder3_result)
+        .Result(adder3_result),
+        .adder_release(adder_release3)
     );
     
     Multiplier mul1 (
@@ -302,23 +298,16 @@ module Tomasulo(
         .readdata_valid(mem_valid)
     );
 
-    Register_unit R_unit(
+    
+    RegisterFile rf(
         .clk(clk),
-        .Aread_data1(Aread_data1),
-        .Aread_data2(Aread_data2),
-        .Aread_addr1(Aread_addr1),
-        .Aread_addr2(Aread_addr2),
-        .Aread_valid1(Aread_valid1),
-        .Aread_valid2(Aread_valid2),
-        .Lread_data1(Lread_data1),
-        .Lread_data2(Lread_data2),
-        .Lread_addr1(Lread_addr1),
-        .Lread_addr2(Lread_addr2),
-        .Lread_valid1(Lread_valid1),
-        .Lread_valid2(Lread_valid2),
-        .Reg_writeaddr(Reg_writeaddr),
-        .Reg_writedata(Reg_writedata),
-        .Reg_writevalid(Reg_writevalid)
+        .RegWrite(Reg_writevalid),
+        .readaddr1(read_addr1),
+        .readaddr2(read_addr2),
+        .writeaddr(Reg_writeaddr),
+        .writedata(Reg_writedata),
+        .readdata1(read_data1),
+        .readdata2(read_data2)
     );
     
     Controllogic conlogic(
