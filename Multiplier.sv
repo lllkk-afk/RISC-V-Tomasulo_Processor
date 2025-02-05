@@ -24,13 +24,13 @@ module Multiplier(
     logic [31:0] M; //multiplicand
     logic [5:0]  n; //no of bit
     logic [31:0] A_new;
-
+    
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
-            state <= IDLE;
-            result_valid <= 0;
-            Mul   <= 0;
-            Mulh  <= 0;
+            state            <= IDLE;
+            result_valid     <= 0;
+            Mul              <= 0;
+            Mulh             <= 0;
         end
         else begin
             case (state)

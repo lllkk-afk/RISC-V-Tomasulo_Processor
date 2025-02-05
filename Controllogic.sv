@@ -4,6 +4,7 @@ module Controllogic(
     input  logic [31:0] Instr,
     output logic [2:0] ALUControl,
     output logic [1:0] ImmSrc,
+    output logic       Imminstr, // whether this is immediate instruction
     output logic Load_en, Store_en, Add_en, Multiply_en
     );
     
@@ -19,16 +20,12 @@ module Controllogic(
     assign op5      = Instr[5];
     assign funct7b0 = Instr[25];
 
-    logic [10:0] controls;  
     logic [1:0] ALUOp;
 
     always_comb begin
-        // 默认所有信号无效
-        controls = 10'b0;
         Load_en = 0;
         Store_en = 0;
-        Add_en = 0;
-        Multiply_en = 0;
+        Imminstr = 0;
 
         case(opcode) 
             7'b0000011: begin  // lw (Load)
@@ -56,6 +53,7 @@ module Controllogic(
             7'b0010011: begin  // I-type ALU
                 ALUOp = 2'b10;
                 ImmSrc = 2'b00;
+                Imminstr = 1;
             end
 
             7'b1101111: begin  // jal

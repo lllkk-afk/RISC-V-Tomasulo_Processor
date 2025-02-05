@@ -2,7 +2,8 @@
 
 module Tomasulo(
     input logic clk, reset,
-    input logic [31:0] instr  
+    input logic [31:0] instr,
+    output logic A_stall,LS_stall 
     );
     
     typedef struct packed{
@@ -25,7 +26,7 @@ module Tomasulo(
     logic [3:0] adder_cdb_tag;
     logic adder1_result_valid, adder2_result_valid, adder3_result_valid;
     logic [31:0] adder1_result, adder2_result, adder3_result;
-    logic A_stall,LS_stall;
+    
     
     //multiplier
     logic multi1_start, multi2_start;
@@ -39,6 +40,8 @@ module Tomasulo(
     
     //control logic
     logic Load_en,Store_en,Add_en,Multiply_en;
+    logic [2:0] ALUControl;
+    logic imminstr;
 
     //cdb
     logic cdb_valid;
@@ -54,6 +57,7 @@ module Tomasulo(
     
     //Imm_ext
     logic [31:0] immext;
+    logic [1:0]  immsrc;
     
     //Address_unit
     logic [ 3:0] Load1_tag;
@@ -87,7 +91,7 @@ module Tomasulo(
     logic        Lread_valid2;
 
     
-    CDB cdb(  
+    CDB cdb( 
         .adder1_data(adder1_result),
         .adder2_data(adder2_result),
         .adder3_data(adder3_result),
@@ -113,14 +117,14 @@ module Tomasulo(
         .Data_valid(cdb_valid)
     );
 
-    RS rs_inst (
+    ReservationStation RS (
         // Common
         .clk(clk),
         .reset(reset),
         .rs(rs),
         .rt(rt),
         .rd(rd),
-        
+
         //regfile
         .Reg_writeaddr(Reg_writeaddr),
         .Reg_writedata(Reg_writedata),
@@ -165,7 +169,7 @@ module Tomasulo(
 
         // Load or Store
         .Load1_addr(Load1_addr),
-        .Load1_addr(Load2_addr),
+        .Load2_addr(Load2_addr),
         .Load1_valid(Load1_valid),
         .Load2_valid(Load2_valid),
         .Load1_tag(Load1_tag),
@@ -188,8 +192,10 @@ module Tomasulo(
         //cdb
         .cdb_valid(cdb_valid),
         .cdb_tag(cdb_tag),
-        .cdb_data(cdb_data)
+        .cdb_data(cdb_data),
         
+        //immediate
+        .imminstr(imminstr)
     );
     
     FIFO #(.FIFO_DEPTH(4), .TAG_WIDTH(4)) fifo (
@@ -318,6 +324,7 @@ module Tomasulo(
     Controllogic conlogic(
         .Instr(instr),
         .ImmSrc(immsrc),
+        .Imminstr(imminstr),
         .ALUControl(ALUControl),
         .Load_en(Load_en), 
         .Store_en(Store_en), 

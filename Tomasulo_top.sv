@@ -43,7 +43,9 @@ module Tomasulo_top(
     Tomasulo tomasulo(
         .clk(clk), 
         .reset(reset),
-        .instr(Instr)  
+        .instr(Instr),
+        .A_stall(A_stall),
+        .LS_stall(LS_stall)  
     );
     
 endmodule

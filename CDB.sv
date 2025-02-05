@@ -16,16 +16,14 @@ module CDB (
     output logic        Data_valid
 );
 
-always_comb begin
-    Data_valid = 0;
-    Data_out   = 0;
-    Tag_out    = 0;
 
+always_comb begin 
+    
     if (adder1_valid) begin
         Data_out   = adder1_data;
         Tag_out    = adder1_tag;
         Data_valid = 1;
-    end else if (adder2_valid) begin
+    end else if (adder2_valid ) begin
         Data_out   = adder2_data;
         Tag_out    = adder2_tag;
         Data_valid = 1;
@@ -45,6 +43,11 @@ always_comb begin
         Data_out   = mem_data;
         Tag_out    = mem_tag;
         Data_valid = 1;
+    end
+    else begin
+        Data_valid = 0;
+        Data_out   = 0;
+        Tag_out    = 0;  
     end
 end
 

@@ -10,29 +10,18 @@ module Adder(
     input logic cdb_valid,
     output logic [3:0] Tag_out, // for write back reference
     output logic result_valid,
-    output logic [31:0] Result 
+    output logic [31:0] Result
     );
     
-    logic [1:0]  counter; 
-    
-    
+
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
             result_valid  <= 0;
-            Result        <= 0;       
-            counter       <= 0;    
+            Result        <= 0;  
         end
         else begin
-        
             if (start) begin
                 Result        <= SrcA + SrcB;
-                counter       <= 1;
-                result_valid  <= 0;
-            end
-            else if (counter > 0) begin
-                counter       <= counter - 1;      
-            end
-            else if (counter == 0) begin
                 result_valid  <= 1;
             end
             

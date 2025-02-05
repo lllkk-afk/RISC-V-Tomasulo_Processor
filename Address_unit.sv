@@ -32,19 +32,16 @@ module Address_unit(
     //arbitrator
     always_comb begin
         readdata = 0;
-        readdata_valid = 0;
         write_enable = 0;
         
         if (load1_valid) begin
             addr = load1_addr;
-            readdata_valid = 1;
             readdata = data;
             write_enable = 0;
             tag_out = load1_tag;
         end
         else if (load2_valid) begin
             addr = load2_addr;
-            readdata_valid = 1;
             readdata = data;
             write_enable = 0;
             tag_out = load2_tag;
@@ -55,17 +52,23 @@ module Address_unit(
             write_enable = 1;
         end
         else  if (store2_valid) begin
-            addr = store1_addr;
+            addr = store2_addr;
             writedata = store2_data;
             write_enable = 1;
         end
     end
     
     always_ff @(posedge clk) begin
+       
+        if (load1_valid | load2_valid) begin
+            readdata_valid <= 1;
+        end
+
         if (readdata_valid && cdb_valid && (cdb_tag == tag_out)) begin
             readdata_valid <= 0;  
         end
     end
+
             
     data_mem dm(
         .clk(clk),
