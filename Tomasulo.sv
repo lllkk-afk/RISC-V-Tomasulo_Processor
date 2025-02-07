@@ -27,7 +27,6 @@ module Tomasulo(
     logic adder1_result_valid, adder2_result_valid, adder3_result_valid;
     logic [31:0] adder1_result, adder2_result, adder3_result;
     
-    logic adder_release1,adder_release2,adder_release3;
     
     
     //multiplier
@@ -49,13 +48,13 @@ module Tomasulo(
     logic cdb_valid;
     logic [3:0] cdb_tag;
     logic [31:0] cdb_data;
-    logic [31:0] mem_data;
-    logic        mem_valid;
+    logic [31:0] mem_read_data1,mem_read_data2;
     logic [3:0]  mem_tag;
+    logic mem_readdata1_valid,mem_readdata2_valid;
     
     //fifo
     logic push,pop;
-    logic [3:0] front_tag,RdTag;
+    logic [3:0] front_tag,push_tag;
     
     //Imm_ext
     logic [31:0] immext;
@@ -105,14 +104,40 @@ module Tomasulo(
         .multi2_tag(multi2_tag_out),
         .multi1_valid(multi1_result_valid),
         .multi2_valid(multi2_result_valid),
-        .mem_data(mem_data),
+        .mem_data1(mem_read_data1),
+        .mem_data2(mem_read_data2),
         .mem_tag(mem_tag),
-        .mem_valid(mem_valid),
+        .mem_valid1(mem_readdata1_valid),
+        .mem_valid2(mem_readdata2_valid),
         .Data_out(cdb_data),
         .Tag_out(cdb_tag),
         .Data_valid(cdb_valid)
     );
+    
+    Address_unit address_unit_inst (
+        .clk(clk),
+        .load1_tag(Load1_tag),
+        .load2_tag(Load2_tag),
+        .load1_addr(Load1_addr),
+        .load2_addr(Load2_addr),
+        .store1_addr(Store1_addr),
+        .store2_addr(Store2_addr),
+        .store1_data(Store1_data),
+        .store2_data(Store2_data),
+        .load1_valid(Load1_valid),
+        .load2_valid(Load2_valid),
+        .store1_valid(Store1_valid),
+        .store2_valid(Store2_valid),
+        .cdb_valid(cdb_valid),
+        .cdb_tag(cdb_tag),
+        .tag_out(mem_tag),
+        .readdata1(mem_read_data1),
+        .readdata2(mem_read_data2),
+        .readdata1_valid(mem_readdata1_valid),
+        .readdata2_valid(mem_readdata2_valid)
+    );
 
+    
     ReservationStation RS (
         // Common
         .clk(clk),
@@ -120,11 +145,6 @@ module Tomasulo(
         .rs(rs),
         .rt(rt),
         .rd(rd),
-    
-        //adder
-        .adder_release1(adder_release1),
-        .adder_release2(adder_release2),
-        .adder_release3(adder_release3),
         
         //regfile
         .Reg_writeaddr(Reg_writeaddr),
@@ -134,7 +154,23 @@ module Tomasulo(
         .read_data2(read_data2), 
         .read_addr1(read_addr1),
         .read_addr2(read_addr2),
-    
+        
+        //mem
+        .mem_read_data1(mem_read_data1),
+        .mem_read_data2(mem_read_data2),
+        .Load1_addr(Load1_addr),
+        .Load2_addr(Load2_addr),
+        .Load1_valid(Load1_valid),
+        .Load2_valid(Load2_valid),
+        .Load1_tag(Load1_tag),
+        .Load2_tag(Load2_tag),
+        .Store1_addr(Store1_addr),
+        .Store2_addr(Store2_addr),
+        .Store1_valid(Store1_valid),
+        .Store2_valid(Store2_valid),
+        .Store1_data(Store1_data),
+        .Store2_data(Store2_data),
+        
         // Arithmetic
         .Add_en(Add_en),
         .Mul_en(Multiply_en),
@@ -161,25 +197,13 @@ module Tomasulo(
         .A_stall(A_stall),
 
         // Load or Store
-        .Load1_addr(Load1_addr),
-        .Load2_addr(Load2_addr),
-        .Load1_valid(Load1_valid),
-        .Load2_valid(Load2_valid),
-        .Load1_tag(Load1_tag),
-        .Load2_tag(Load2_tag),
-        .Store1_addr(Store1_addr),
-        .Store2_addr(Store2_addr),
-        .Store1_valid(Store1_valid),
-        .Store2_valid(Store2_valid),
-        .Store1_data(Store1_data),
-        .Store2_data(Store2_data),
         .Load_en(Load_en),
         .Store_en(Store_en),
         .ext_imm(immext),
         .front_tag(front_tag),
         .push(push),
         .pop(pop),
-        .RdTag(RdTag),
+        .push_tag(push_tag),
         .LS_stall(LS_stall),
         
         //cdb
@@ -196,7 +220,7 @@ module Tomasulo(
         .reset(reset),
         .push(push),
         .pop(pop),
-        .push_tag(RdTag),
+        .push_tag(push_tag),
         .front_tag(front_tag)
     );
     
@@ -211,8 +235,7 @@ module Tomasulo(
         .cdb_valid(cdb_valid),
         .Tag_out(adder1_tag_out),
         .result_valid(adder1_result_valid),
-        .Result(adder1_result),
-        .adder_release(adder_release1)
+        .Result(adder1_result)
     );
     
     Adder adder2(
@@ -226,8 +249,7 @@ module Tomasulo(
         .cdb_valid(cdb_valid),
         .Tag_out(adder2_tag_out),
         .result_valid(adder2_result_valid),
-        .Result(adder2_result),
-        .adder_release(adder_release2)
+        .Result(adder2_result)
     );
    
     Adder adder3(
@@ -241,8 +263,7 @@ module Tomasulo(
         .cdb_valid(cdb_valid),
         .Tag_out(adder3_tag_out),
         .result_valid(adder3_result_valid),
-        .Result(adder3_result),
-        .adder_release(adder_release3)
+        .Result(adder3_result)
     );
     
     Multiplier mul1 (
@@ -276,28 +297,6 @@ module Tomasulo(
         .Mulh(multi2_result_higher)
     );
     
-    Address_unit address_unit_inst (
-        .clk(clk),
-        .tag_in(),
-        .load1_tag(Load1_tag),
-        .load2_tag(Load2_tag),
-        .load1_addr(Load1_addr),
-        .load2_addr(Load2_addr),
-        .store1_addr(Store1_addr),
-        .store2_addr(Store2_addr),
-        .store1_data(Store1_data),
-        .store2_data(Store2_data),
-        .load1_valid(Load1_valid),
-        .load2_valid(Load2_valid),
-        .store1_valid(Store1_valid),
-        .store2_valid(Store2_valid),
-        .cdb_valid(cdb_valid),
-        .cdb_tag(cdb_tag),
-        .tag_out(mem_tag),
-        .readdata(mem_data),
-        .readdata_valid(mem_valid)
-    );
-
     
     RegisterFile rf(
         .clk(clk),

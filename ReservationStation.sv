@@ -5,11 +5,11 @@ module ReservationStation(
     input logic         clk, reset,
     input logic [4:0]   rs,rt,rd,
     
-    //adder
-    input logic         adder_release1,adder_release2,adder_release3,
+
     //regfile
     // I seperate into two just to avoid multi-driven problem
     input logic [31:0]  read_data1,read_data2,
+    input logic [31:0]  mem_read_data1,mem_read_data2,
     output logic [ 4:0] read_addr1,read_addr2,
     output logic [4:0]  Reg_writeaddr,
     output logic [31:0] Reg_writedata,
@@ -32,7 +32,7 @@ module ReservationStation(
     input logic [31:0]  ext_imm,
     input logic [3:0]   front_tag,
     output logic        push,pop,
-    output logic [3:0]  RdTag,
+    output logic [3:0]  push_tag,
     output logic [31:0] Load1_addr,Load2_addr,
     output logic        Load1_valid,Load2_valid,
     output logic [31:0] Store1_addr,Store2_addr,
@@ -106,7 +106,7 @@ module ReservationStation(
             end
             for (i = 0; i < 2; i ++) begin
                 MRS[i].Busy     <= 0;
-                ARS[i].Fired    <= 0;
+                MRS[i].Fired    <= 0;
                 MRS[i].Vj       <= 0;
                 MRS[i].Vk       <= 0;
                 MRS[i].Qj       <= 0;
@@ -145,7 +145,6 @@ module ReservationStation(
         end 
         
         else begin
-
             adder1_start <= 0;
             adder2_start <= 0;
             adder3_start <= 0;
@@ -153,18 +152,16 @@ module ReservationStation(
             multi2_start <= 0;
             Reg_writevalid <= 0;
             // -------------------- Issue ------------------------
-            alloc = 3;
             if (Add_en) begin
                 casez(Add_mask)
                     3'b??1: alloc = 0;
                     3'b?10: alloc = 1;
                     3'b100: alloc = 2;
+                    default: alloc = 3;
                 endcase
                 
-                if (alloc == 3) begin
-                end 
-                else begin
-                    //RegStat[rs].Qi == cdb_tag && cdb_valid means RegStat is aviailable in the register, we neeed this since RegStat needs one cycle to update
+                if (alloc != 3) begin
+                   
                     if (RegStat[rs].Qi != 0)
                         ARS[alloc].Qj <= RegStat[rs].Qi; 
                     else begin
@@ -195,9 +192,7 @@ module ReservationStation(
                     2'b?1: alloc = 0;
                     2'b10: alloc = 1;
                 endcase
-                if (alloc == 3) begin
-                end 
-                else begin
+                if (alloc != 3) begin
                     if (RegStat[rs].Qi != 0)
                         MRS[alloc].Qj <= RegStat[rs].Qi; 
                     else begin
@@ -217,7 +212,6 @@ module ReservationStation(
                      
                 end
             end 
-            
             
             // -------------------- Execute ------------------------               
            //add 
@@ -319,12 +313,15 @@ module ReservationStation(
     end
     
     ///////////////////////////////////////////////Load or Store///////////////////////////////////////////////////////
+    
+    assign LS_stall = (Load_en && (&{LRS[0].Busy,LRS[1].Busy})) || 
+                 (Store_en && (&{SRS[0].Busy, SRS[1].Busy}));
+                 
     parameter LOAD1  = 4'b0110;
     parameter LOAD2  = 4'b0111;
     parameter STORE1 = 4'b1000;
     parameter STORE2 = 4'b1001;
     
-
     RS_t LRS[2];
     RS_t SRS[2];
     
@@ -334,7 +331,8 @@ module ReservationStation(
     assign Load_mask = {~LRS[1].Busy,~LRS[0].Busy};
     assign Store_mask = {~SRS[1].Busy,~SRS[0].Busy};
     
-
+    logic [1:0] Lalloc;
+    
     integer j;
     always_ff @(posedge clk or posedge reset) begin
          if (reset) begin
@@ -345,14 +343,16 @@ module ReservationStation(
                 LRS[j].Qj   <= 0;
                 LRS[j].Qk   <= 0;
                 LRS[j].Addr <= 0;
+                LRS[j].Fired <= 0;
                 SRS[j].Busy <= 0;
                 SRS[j].Vj   <= 0;
                 SRS[j].Vk   <= 0;
                 SRS[j].Qj   <= 0;
                 SRS[j].Qk   <= 0;
                 SRS[j].Addr <= 0;
+                SRS[j].Fired <= 0;
             end
-            LS_stall           <= 0; 
+            LS_stall        <= 0; 
             LRS[0].Tag      <= LOAD1;    
             LRS[1].Tag      <= LOAD2;  
             SRS[0].Tag      <= STORE1;
@@ -368,103 +368,88 @@ module ReservationStation(
             Store2_addr  <= 0;
             Store1_valid <= 0;
             Store2_valid <= 0;
-            Store1_data  <= 0;
-            Store2_data  <= 0;
+
         end
         // -------------------- Issue ------------------------
-       
-        else begin
-            Load1_addr   <= 0;
-            Load2_addr   <= 0;
+        else begin    
             Load1_valid  <= 0;
             Load2_valid  <= 0;
-            Store1_addr  <= 0;
-            Store2_addr  <= 0;
             Store1_valid <= 0;
-            Store2_valid <= 0;
-            Store1_data  <= 0;
-            Store2_data  <= 0;
-            
+            Store2_valid <= 0;        
             if (Load_en) begin
-                alloc = 3;
                 casez(Load_mask)
-                    2'b?1: alloc = 0; 
-                    2'b10: alloc = 1;
+                    2'b?1: Lalloc = 0; 
+                    2'b10: Lalloc = 1;
+                    default: Lalloc = 3;
                 endcase
 
-                if (alloc == 3) begin
-                    LS_stall <= 1; 
-                end 
-                else begin
+                if (Lalloc != 3) begin                 
                     if (RegStat[rs].Qi != 0)
-                        LRS[alloc].Qj <= RegStat[rs].Qi; 
+                        LRS[Lalloc].Qj <= RegStat[rs].Qi; 
                     else begin
-                        LRS[alloc].Vj <= read_data1; 
-                        LRS[alloc].Qj <= 0;
+                        LRS[Lalloc].Vj <= mem_read_data1; 
+                        LRS[Lalloc].Qj <= 0;
                     end
                 
-                    LRS[alloc].Addr   <= ext_imm; 
-                    LRS[alloc].Busy   <= 1;
-                    RdTag             <= LRS[alloc].Tag;
-                
-                    //push into FIFO
-                    push    <= 1;
+                    LRS[Lalloc].Addr   <= ext_imm; 
+                    LRS[Lalloc].Busy   <= 1;
+                    
+                    RegStat[rd].Qi     <= LRS[alloc].Tag;
+                    
+                    push_tag           <= LRS[Lalloc].Tag;
+                    push               <= 1;
                 end   
             end
             else if (Store_en) begin
-                alloc = 3;
                 casez(Store_mask)
-                    2'b?1: alloc = 0; 
-                    2'b10: alloc = 1;
+                    2'b?1: Lalloc = 0; 
+                    2'b10: Lalloc = 1;
+                    default: Lalloc = 3;
                 endcase
     
-                if (alloc == 3) begin
-                    LS_stall <= 1; 
-                end 
-                else begin
+                if (Lalloc != 3) begin
                     if (RegStat[rs].Qi != 0)
-                        SRS[alloc].Qj <= RegStat[rs].Qi; 
+                        SRS[Lalloc].Qj <= RegStat[rs].Qi; 
                     else begin
-                        SRS[alloc].Vj <= read_data1; 
-                        SRS[alloc].Qj <= 0;
+                        SRS[Lalloc].Vj <= mem_read_data1; 
+                        SRS[Lalloc].Qj <= 0;
                     end
                 
                     if (RegStat[rt].Qi != 0)
-                        SRS[alloc].Qk <= RegStat[rt].Qi; 
+                        SRS[Lalloc].Qk <= RegStat[rt].Qi; 
                     else begin
-                        SRS[alloc].Vk <= read_data2; 
-                        SRS[alloc].Qk <= 0;
+                        SRS[Lalloc].Vk <= mem_read_data2; 
+                        SRS[Lalloc].Qk <= 0;
                     end
 
-                    SRS[alloc].Busy <= 1;
-                    SRS[alloc].Addr <= ext_imm;
-                    RdTag           <= SRS[alloc].Tag; 
-                    push            <= 1;
+                    SRS[Lalloc].Busy <= 1;
+                    SRS[Lalloc].Addr <= ext_imm;
+                    push_tag         <= SRS[Lalloc].Tag; 
+                    push             <= 1;
                 end
-            end
-            else begin
-                push            <= 0;
-                pop             <= 0;
             end
             
         // -------------------- Execute ------------------------    
             
             for (j = 0; j < 2; j ++)begin
-                if (LRS[j].Qj == 0 & front_tag == LRS[j].Tag) begin
+                if (!LRS[j].Fired & LRS[j].Qj == 0 & front_tag == LRS[j].Tag & LRS[j].Busy) begin
                     if (j == 0) begin
                         Load1_addr   <= LRS[j].Vj + LRS[j].Addr;  
                         Load1_valid  <= 1;  
-                        Load1_tag    <= LRS[j].Tag;                      
+                        Load1_tag    <= LRS[j].Tag;
+                        LRS[j].Fired <= 1;                  
                     end
                     else begin
                         Load2_addr   <= LRS[j].Vj + LRS[j].Addr;
                         Load2_valid  <= 1;
-                        Load2_tag    <= LRS[j].Tag;  
+                        Load2_tag    <= LRS[j].Tag; 
+                        LRS[j].Fired <= 1; 
                     end
                 end
+                
             end
             
-            // both execute and write for store
+           
             for (j = 0; j < 2; j++) begin
                 if (SRS[j].Qj == 0 && SRS[j].Qk == 0 && front_tag == SRS[j].Tag) begin
                     if (j == 0) begin
@@ -482,6 +467,33 @@ module ReservationStation(
                end
             end                  
         end
+        
+        // --------------------------Write Result---------------------
+            for (j = 0; j < 2; j ++ ) begin
+                if (LRS[j].Qj == cdb_tag && cdb_valid) begin
+                    LRS[j].Vj <= cdb_data;
+                    LRS[j].Qj <= 0;
+                end  
+                if (LRS[j].Qk == cdb_tag && cdb_valid) begin
+                    LRS[j].Vk <= cdb_data;
+                    LRS[j].Qk <= 0;
+                end         
+                if (LRS[j].Tag == cdb_tag && cdb_valid) begin
+                    LRS[j].Busy <= 0;
+                    LRS[j].Fired <= 0;
+                end
+            end
+            
+            for (j = 0; j < 2; j ++ ) begin
+                if (SRS[j].Qj == cdb_tag && cdb_valid) begin
+                    SRS[j].Vj <= cdb_data;
+                    SRS[j].Qj <= 0;
+                end  
+                if (SRS[j].Qk == cdb_tag && cdb_valid) begin
+                    SRS[j].Vk <= cdb_data;
+                    SRS[j].Qk <= 0;
+                end         
+            end
     end
     
 

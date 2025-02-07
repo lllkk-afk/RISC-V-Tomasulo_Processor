@@ -2,7 +2,6 @@
 
 module Address_unit(
     input  logic        clk,
-    input  logic [3:0]  tag_in,
     input  logic [3:0]  load1_tag,
     input  logic [3:0]  load2_tag,
     // don't need tag for store
@@ -20,8 +19,10 @@ module Address_unit(
     input  logic        cdb_valid,
     input  logic [3:0]  cdb_tag,
     output logic [3:0]  tag_out,
-    output logic [31:0] readdata,
-    output logic        readdata_valid
+    output logic [31:0] readdata1,
+    output logic [31:0] readdata2,
+    output logic        readdata1_valid,
+    output logic        readdata2_valid
     );
     
     logic write_enable;
@@ -31,18 +32,20 @@ module Address_unit(
     
     //arbitrator
     always_comb begin
-        readdata = 0;
+        tag_out   = 0;
+        readdata1 = 0;
+        readdata2 = 0;
         write_enable = 0;
         
         if (load1_valid) begin
             addr = load1_addr;
-            readdata = data;
+            readdata1 = data;
             write_enable = 0;
             tag_out = load1_tag;
         end
         else if (load2_valid) begin
             addr = load2_addr;
-            readdata = data;
+            readdata2 = data;
             write_enable = 0;
             tag_out = load2_tag;
         end
@@ -51,7 +54,7 @@ module Address_unit(
             writedata = store1_data;
             write_enable = 1;
         end
-        else  if (store2_valid) begin
+        else if (store2_valid) begin
             addr = store2_addr;
             writedata = store2_data;
             write_enable = 1;
@@ -59,14 +62,23 @@ module Address_unit(
     end
     
     always_ff @(posedge clk) begin
-       
-        if (load1_valid | load2_valid) begin
-            readdata_valid <= 1;
+        
+        if (load1_valid) begin
+            readdata1_valid <= 1;
         end
-
-        if (readdata_valid && cdb_valid && (cdb_tag == tag_out)) begin
-            readdata_valid <= 0;  
+        
+        if (load2_valid) begin
+            readdata2_valid <= 1;
         end
+             
+        if (readdata1_valid && cdb_valid && (cdb_tag == tag_out)) begin
+            readdata1_valid <= 0;  
+        end
+        
+        if (readdata2_valid && cdb_valid && (cdb_tag == tag_out)) begin
+            readdata2_valid <= 0;  
+        end
+        
     end
 
             
