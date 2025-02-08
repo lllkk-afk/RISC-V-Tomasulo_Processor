@@ -1,12 +1,16 @@
 # RISC-V-Tomasulo_Processor
-testcase 1 (Correct! out-of-order execution)
-ADDI x1, x0, 3  0x00300093
-ADDI x2, x0, 5 0x00500113
-ADD x3, x1, x2 0x002081b3
-ADDI x6, x0, 6  0x00600313 (this one should execute first)
-ADD x4, x3, x2 0x00218233
-SUB x5, x4, x1	 0x401202b3
-ADD x7, x6, x5 0x005303b3 
+
+
+## Testcase 1 (Correct! Out-of-order execution)
+```asm
+ADDI x1, x0, 3       0x00300093
+ADDI x2, x0, 5       0x00500113
+ADD x3, x1, x2       0x002081b3
+ADDI x6, x0, 6       0x00600313   # This one should execute first
+ADD x4, x3, x2       0x00218233
+SUB x5, x4, x1       0x401202b3
+ADD x7, x6, x5       0x005303b3
+
 
 testcase 2 (Correct! multiply works)
 ADDI x1, x0, 3  0x00300093
@@ -20,7 +24,7 @@ SUB x5, x4, x1	 0x401202b3
 ADD x7, x6, x5 0x005303b3 
 
 
-testcase 3 (Correct! Load?store with address offset)
+testcase 3 (Correct! Load/store with address offset)
 ADDI x1, x0, 3  0x00300093
 ADDI x	2, x0, 5 0x00500113
 SW x1, 0(x2)	0x00112023
