@@ -27,7 +27,10 @@ module Tomasulo(
     logic adder1_result_valid, adder2_result_valid, adder3_result_valid;
     logic [31:0] adder1_result, adder2_result, adder3_result;
     
-    
+    //mem
+    logic [31:0] mem_read_data1,mem_read_data2;
+    logic        mem_read_valid1,mem_read_valid2;
+    logic [3:0]  mem_tag;
     
     //multiplier
     logic multi1_start, multi2_start;
@@ -48,9 +51,8 @@ module Tomasulo(
     logic cdb_valid;
     logic [3:0] cdb_tag;
     logic [31:0] cdb_data;
-    logic [31:0] mem_read_data1,mem_read_data2;
-    logic [3:0]  mem_tag;
-    logic mem_readdata1_valid,mem_readdata2_valid;
+    logic [31:0] mem_data;
+    logic        mem_valid;
     
     //fifo
     logic push,pop;
@@ -78,10 +80,8 @@ module Tomasulo(
     logic        Reg_writevalid;
     logic [ 4:0] Reg_writeaddr;
     logic [31:0] Reg_writedata;
-    logic [31:0] read_data1;
-    logic [31:0] read_data2;
-    logic [ 4:0] read_addr1;
-    logic [ 4:0] read_addr2;
+    logic [31:0] read_data1,read_data2,Lread_data1,Lread_data2;
+    logic [ 4:0] read_addr1,read_addr2,Lread_addr1,Lread_addr2;
 
     
     CDB cdb( 
@@ -107,36 +107,12 @@ module Tomasulo(
         .mem_data1(mem_read_data1),
         .mem_data2(mem_read_data2),
         .mem_tag(mem_tag),
-        .mem_valid1(mem_readdata1_valid),
-        .mem_valid2(mem_readdata2_valid),
+        .mem_valid1(mem_read_valid1),
+        .mem_valid2(mem_read_valid2),
         .Data_out(cdb_data),
         .Tag_out(cdb_tag),
         .Data_valid(cdb_valid)
     );
-    
-    Address_unit address_unit_inst (
-        .clk(clk),
-        .load1_tag(Load1_tag),
-        .load2_tag(Load2_tag),
-        .load1_addr(Load1_addr),
-        .load2_addr(Load2_addr),
-        .store1_addr(Store1_addr),
-        .store2_addr(Store2_addr),
-        .store1_data(Store1_data),
-        .store2_data(Store2_data),
-        .load1_valid(Load1_valid),
-        .load2_valid(Load2_valid),
-        .store1_valid(Store1_valid),
-        .store2_valid(Store2_valid),
-        .cdb_valid(cdb_valid),
-        .cdb_tag(cdb_tag),
-        .tag_out(mem_tag),
-        .readdata1(mem_read_data1),
-        .readdata2(mem_read_data2),
-        .readdata1_valid(mem_readdata1_valid),
-        .readdata2_valid(mem_readdata2_valid)
-    );
-
     
     ReservationStation RS (
         // Common
@@ -146,18 +122,7 @@ module Tomasulo(
         .rt(rt),
         .rd(rd),
         
-        //regfile
-        .Reg_writeaddr(Reg_writeaddr),
-        .Reg_writedata(Reg_writedata),
-        .Reg_writevalid(Reg_writevalid),
-        .read_data1(read_data1), 
-        .read_data2(read_data2), 
-        .read_addr1(read_addr1),
-        .read_addr2(read_addr2),
-        
         //mem
-        .mem_read_data1(mem_read_data1),
-        .mem_read_data2(mem_read_data2),
         .Load1_addr(Load1_addr),
         .Load2_addr(Load2_addr),
         .Load1_valid(Load1_valid),
@@ -170,6 +135,19 @@ module Tomasulo(
         .Store2_valid(Store2_valid),
         .Store1_data(Store1_data),
         .Store2_data(Store2_data),
+        
+        //regfile
+        .Reg_writeaddr(Reg_writeaddr),
+        .Reg_writedata(Reg_writedata),
+        .Reg_writevalid(Reg_writevalid),
+        .read_data1(read_data1), 
+        .read_data2(read_data2), 
+        .read_addr1(read_addr1),
+        .read_addr2(read_addr2),
+        .Lread_data1(Lread_data1), 
+        .Lread_data2(Lread_data2), 
+        .Lread_addr1(Lread_addr1),
+        .Lread_addr2(Lread_addr2),
         
         // Arithmetic
         .Add_en(Add_en),
@@ -297,16 +275,44 @@ module Tomasulo(
         .Mulh(multi2_result_higher)
     );
     
+        
+    Address_unit address_unit_inst (
+        .clk(clk),
+        .load1_tag(Load1_tag),
+        .load2_tag(Load2_tag),
+        .load1_addr(Load1_addr),
+        .load2_addr(Load2_addr),
+        .store1_addr(Store1_addr),
+        .store2_addr(Store2_addr),
+        .store1_data(Store1_data),
+        .store2_data(Store2_data),
+        .load1_valid(Load1_valid),
+        .load2_valid(Load2_valid),
+        .store1_valid(Store1_valid),
+        .store2_valid(Store2_valid),
+        .cdb_valid(cdb_valid),
+        .cdb_tag(cdb_tag),
+        .tag_out(mem_tag),
+        .mem_read_data1(mem_read_data1),
+        .mem_read_data2(mem_read_data2),
+        .mem_read_valid1(mem_read_valid1),
+        .mem_read_valid2(mem_read_valid2)
+    );
+
     
     RegisterFile rf(
         .clk(clk),
         .RegWrite(Reg_writevalid),
         .readaddr1(read_addr1),
         .readaddr2(read_addr2),
+        .Lreadaddr1(Lread_addr1),
+        .Lreadaddr2(Lread_addr2),
         .writeaddr(Reg_writeaddr),
         .writedata(Reg_writedata),
         .readdata1(read_data1),
-        .readdata2(read_data2)
+        .readdata2(read_data2),
+        .Lreaddata1(Lread_data1),
+        .Lreaddata2(Lread_data2)
     );
     
     Controllogic conlogic(

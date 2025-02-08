@@ -19,10 +19,8 @@ module Address_unit(
     input  logic        cdb_valid,
     input  logic [3:0]  cdb_tag,
     output logic [3:0]  tag_out,
-    output logic [31:0] readdata1,
-    output logic [31:0] readdata2,
-    output logic        readdata1_valid,
-    output logic        readdata2_valid
+    output logic [31:0] mem_read_data1,mem_read_data2,
+    output logic        mem_read_valid1,mem_read_valid2
     );
     
     logic write_enable;
@@ -32,20 +30,16 @@ module Address_unit(
     
     //arbitrator
     always_comb begin
-        tag_out   = 0;
-        readdata1 = 0;
-        readdata2 = 0;
+
         write_enable = 0;
         
         if (load1_valid) begin
             addr = load1_addr;
-            readdata1 = data;
             write_enable = 0;
             tag_out = load1_tag;
         end
         else if (load2_valid) begin
             addr = load2_addr;
-            readdata2 = data;
             write_enable = 0;
             tag_out = load2_tag;
         end
@@ -62,21 +56,23 @@ module Address_unit(
     end
     
     always_ff @(posedge clk) begin
-        
+       
         if (load1_valid) begin
-            readdata1_valid <= 1;
+            mem_read_data1 <= data;
+            mem_read_valid1 <= 1;
+        end
+        
+        if (mem_read_valid1 && cdb_valid && (cdb_tag == tag_out)) begin
+            mem_read_valid1 <= 0;  
         end
         
         if (load2_valid) begin
-            readdata2_valid <= 1;
-        end
-             
-        if (readdata1_valid && cdb_valid && (cdb_tag == tag_out)) begin
-            readdata1_valid <= 0;  
+            mem_read_data2 <= data;
+            mem_read_valid2 <= 1;
         end
         
-        if (readdata2_valid && cdb_valid && (cdb_tag == tag_out)) begin
-            readdata2_valid <= 0;  
+        if (mem_read_valid2 && cdb_valid && (cdb_tag == tag_out)) begin
+            mem_read_valid2 <= 0;  
         end
         
     end

@@ -24,11 +24,11 @@ module FIFO #(
         else begin
             if (push) begin
                 fifo_mem[tail] <= push_tag;
-                tail <= (tail + 1) % FIFO_DEPTH;
+                tail <= (tail + 1);
             end
 
             if (pop) begin
-                head <= (head + 1) % FIFO_DEPTH;
+                head <= (head + 1);
             end
         end
     end
