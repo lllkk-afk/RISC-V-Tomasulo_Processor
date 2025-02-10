@@ -35,3 +35,4 @@ UROP run on board. VS. FYP software
 https://github.com/NUS-CG3207/labs
 tell the story, FYP + hardware
 IEEE 2 colomn
+riscv one line introduction good enough
