@@ -29,3 +29,6 @@ LW x3, 0(x2)         0x00012183   # x3 should be 3
 ADDI x4, x0, 1       0x00100213
 SW x1, 4(x4)         0x00122223
 LW x5, 4(x4)         0x00422283   # x5 should be 3 (this tests the address offset)
+
+
+UROP run on board. VS. FYP software
