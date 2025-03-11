@@ -25,6 +25,8 @@ module ReservationStation(
     //Arithmatic
     input logic         Add_en,
     input logic         Mul_en,
+    input logic         isadd, //new
+    input logic         ismultiply, //new
     output logic        adder1_start,adder2_start,adder3_start,    
     output logic [31:0] adder1_SrcA,adder2_SrcA,adder3_SrcA, 
     output logic [31:0] adder1_SrcB,adder2_SrcB,adder3_SrcB,   
@@ -33,6 +35,8 @@ module ReservationStation(
     output logic [31:0] multi1_SrcA,multi2_SrcA,multi1_SrcB,multi2_SrcB,  
     output logic [3:0]  multi1_tag,multi2_tag,
     output logic        A_stall,
+    output logic        adder1_isadd,adder2_isadd,adder3_isadd,
+    output logic        multi1_ismultiply,multi2_ismultiply,
     
     //load or store
     input logic         Load_en,Store_en,
@@ -61,6 +65,8 @@ module ReservationStation(
         logic [2:0]  Qj;
         logic [2:0]  Qk;
         logic [31:0] Addr;
+        logic        isadd;
+        logic        ismultiply;
     } RS_t;
     
     typedef struct packed{
@@ -98,12 +104,14 @@ module ReservationStation(
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
             for (i = 0; i < 3; i++) begin
-                ARS[i].Busy     <= 0;
-                ARS[i].Fired    <= 0;
-                ARS[i].Vj       <= 0;
-                ARS[i].Vk       <= 0;
-                ARS[i].Qj       <= 0;
-                ARS[i].Qk       <= 0;
+                ARS[i].Busy         <= 0;
+                ARS[i].Fired        <= 0;
+                ARS[i].Vj           <= 0;
+                ARS[i].Vk           <= 0;
+                ARS[i].Qj           <= 0;
+                ARS[i].Qk           <= 0;
+                ARS[i].isadd        <= 0;
+                ARS[i].ismultiply    <= 0; //dummy
             end
             for (i = 0; i < 2; i ++) begin
                 MRS[i].Busy     <= 0;
@@ -112,6 +120,8 @@ module ReservationStation(
                 MRS[i].Vk       <= 0;
                 MRS[i].Qj       <= 0;
                 MRS[i].Qk       <= 0;
+                MRS[i].isadd        <= 0;  //dummy
+                MRS[i].ismultiply    <= 0; 
             end      
             ARS[0].Tag     <= ADD1;
             ARS[1].Tag     <= ADD2;
@@ -132,10 +142,15 @@ module ReservationStation(
             adder1_tag   <= 0;
             adder2_tag   <= 0;
             adder3_tag   <= 0;
+            adder1_isadd <= 0;
+            adder2_isadd <= 0;
+            adder3_isadd <= 0;
             
             //multiplier logic
             multi1_start <= 0;
             multi2_start <= 0;
+            multi1_ismultiply <= 0;
+            multi2_ismultiply <= 0;
             multi1_SrcA  <= 0;
             multi2_SrcA  <= 0;
             multi1_SrcB  <= 0;
@@ -149,8 +164,13 @@ module ReservationStation(
             adder1_start <= 0;
             adder2_start <= 0;
             adder3_start <= 0;
+            adder1_isadd <= 0;
+            adder2_isadd <= 0;
+            adder3_isadd <= 0;
             multi1_start <= 0;
             multi2_start <= 0;
+            multi1_ismultiply <= 0;
+            multi2_ismultiply <= 0;
             Reg_writevalid <= 0;
             // -------------------- Issue ------------------------
             if (Add_en) begin
@@ -184,7 +204,7 @@ module ReservationStation(
                             ARS[alloc].Qk <= 0;                   
                         end
                     end         
-            
+                    ARS[alloc].isadd <= isadd;
                     ARS[alloc].Busy <= 1;
                     RegStat[rd].Qi <= ARS[alloc].Tag;
                 end
@@ -193,6 +213,7 @@ module ReservationStation(
                 casez(Mul_mask)
                     2'b?1: alloc = 0;
                     2'b10: alloc = 1;
+                    default: alloc = 3;
                 endcase
                 if (alloc != 3) begin
                     if (RegStat[rs].Qi != 0)
@@ -208,10 +229,10 @@ module ReservationStation(
                         MRS[alloc].Vk <= read_data2;
                         MRS[alloc].Qk <= 0;
                     end
-            
+                
                     MRS[alloc].Busy <= 1;
                     RegStat[rd].Qi <= MRS[alloc].Tag;
-                     
+                    MRS[alloc].ismultiply <= ismultiply;
                 end
             end 
             
@@ -222,6 +243,7 @@ module ReservationStation(
                     case(i)
                         0:begin
                             adder1_start <= 1;
+                            adder1_isadd <= ARS[i].isadd;
                             ARS[i].Fired <= 1;
                             adder1_SrcA  <= ARS[i].Vj;
                             adder1_SrcB  <= ARS[i].Vk;   
@@ -229,6 +251,7 @@ module ReservationStation(
                           end
                         1:begin
                             adder2_start <= 1;
+                            adder2_isadd <= ARS[i].isadd;
                             ARS[i].Fired <= 1;
                             adder2_SrcA  <= ARS[i].Vj;
                             adder2_SrcB  <= ARS[i].Vk;    
@@ -236,6 +259,7 @@ module ReservationStation(
                           end
                         2:begin
                             adder3_start <= 1;
+                            adder3_isadd <= ARS[i].isadd;
                             ARS[i].Fired <= 1;
                             adder3_SrcA  <= ARS[i].Vj;
                             adder3_SrcB  <= ARS[i].Vk;    
@@ -252,6 +276,7 @@ module ReservationStation(
                     case (i)
                         0: begin
                            multi1_start <= 1;
+                           multi1_ismultiply <= MRS[i].ismultiply;
                            multi1_SrcA  <= MRS[i].Vj;
                            multi1_SrcB  <= MRS[i].Vk;   
                            multi1_tag   <= MRS[i].Tag;      
@@ -259,6 +284,7 @@ module ReservationStation(
                            end
                         1: begin
                            multi2_start <= 1;
+                           multi2_ismultiply <= MRS[i].ismultiply;
                            multi2_SrcA  <= MRS[i].Vj;
                            multi2_SrcB  <= MRS[i].Vk;   
                            multi2_tag   <= MRS[i].Tag;   

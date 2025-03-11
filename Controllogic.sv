@@ -5,7 +5,9 @@ module Controllogic(
     output logic [2:0] ALUControl,
     output logic [1:0] ImmSrc,
     output logic       Imminstr, // whether this is immediate instruction
-    output logic Load_en, Store_en, Add_en, Multiply_en
+    output logic Load_en, Store_en, Add_en, Multiply_en,
+    output logic ismultiply,
+    output logic isadd
     );
     
     logic [6:0] opcode;
@@ -26,6 +28,7 @@ module Controllogic(
         Load_en = 0;
         Store_en = 0;
         Imminstr = 0;
+        
 
         case(opcode) 
             7'b0000011: begin  // lw (Load)
@@ -74,6 +77,8 @@ module Controllogic(
     always_comb begin
         Add_en = 0;
         Multiply_en = 0;
+        ismultiply = 0;
+        isadd      = 0;
 
         case(ALUOp)
             2'b00:   ALUControl = 3'b000;  // ADD (”√”⁄ Load/Store)
@@ -83,19 +88,27 @@ module Controllogic(
                     if (Rtypesub) begin
                         ALUControl = 3'b001; // SUB
                         Add_en = 1; 
+                        isadd      = 0;
                     end
                     else if (funct7b0) begin
                         ALUControl  = 3'b110; // MUL
                         Multiply_en = 1;
+                        ismultiply = 1;
                     end
                     else begin
                         ALUControl = 3'b000; // ADD
                         Add_en = 1; 
+                        isadd      = 1;
                     end
                 end
                 3'b010: ALUControl = 3'b101; // SLT
-                3'b110: ALUControl = 3'b011; // OR
+                3'b110: ALUControl = 3'b011; // OR               
                 3'b111: ALUControl = 3'b010; // AND
+                3'b100: begin                //DIV
+                        ALUControl = 3'b111;
+                        Multiply_en = 1;
+                        ismultiply = 0;
+                        end 
                 default: ALUControl = 3'bx;
             endcase
         endcase

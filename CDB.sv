@@ -9,9 +9,11 @@ module CDB (
     input  logic [31:0] multi1_data_higher, multi2_data_higher,
     input  logic [3:0]  multi1_tag,  multi2_tag,
     input  logic        multi1_valid, multi2_valid,
+    input  logic        mulvalid1, divvalid1,mulvalid2,divvalid2,
     input  logic [31:0] mem_data1,mem_data2,
     input  logic [3:0]  mem_tag,
     input  logic        mem_valid1,mem_valid2,
+    input  logic [31:0] Quotient1,Quotient2,Remainder1,Remainder2,
     output logic [31:0] Data_out,
     output logic [3:0]  Tag_out,
     output logic        Data_valid
@@ -46,14 +48,28 @@ always_ff @(posedge clk or posedge reset) begin
             Data_valid <= 1;
         end 
         else if (multi1_valid) begin
-            Data_out   <= multi1_data_lower; // Lower part used as default
-            Tag_out    <= multi1_tag;
-            Data_valid <= 1;
+            if (mulvalid1) begin
+                Data_out   <= multi1_data_lower; // Lower part used as default
+                Tag_out    <= multi1_tag;
+                Data_valid <= 1;
+            end 
+            else begin 
+                Data_out   <= Quotient1; // Lower part used as default
+                Tag_out    <= multi1_tag;
+                Data_valid <= 1;
+            end
         end 
         else if (multi2_valid) begin
-            Data_out   <= multi2_data_lower;
-            Tag_out    <= multi2_tag;
-            Data_valid <= 1;
+            if (mulvalid2) begin
+                Data_out   <= multi2_data_lower; // Lower part used as default
+                Tag_out    <= multi2_tag;
+                Data_valid <= 1;
+            end 
+            else begin 
+                Data_out   <= Quotient2; // Lower part used as default
+                Tag_out    <= multi2_tag;
+                Data_valid <= 1;
+            end
         end 
         else if (mem_valid1) begin
             Data_out   <= mem_data1;

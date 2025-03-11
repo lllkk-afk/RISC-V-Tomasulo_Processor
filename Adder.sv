@@ -8,6 +8,7 @@ module Adder(
     input logic [3:0] Tag_in,
     input logic [3:0] cdb_tag, // for clearing valid 
     input logic cdb_valid,
+    input logic isadd,
     output logic [3:0] Tag_out, // for write back reference
     output logic result_valid,
     output logic [31:0] Result
@@ -20,7 +21,7 @@ module Adder(
         end
         else begin
             if (start) begin
-                Result        <= SrcA + SrcB;
+                Result        <= isadd? SrcA + SrcB : SrcA - SrcB;
                 result_valid  <= 1;
             end
             

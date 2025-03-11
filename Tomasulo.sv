@@ -26,6 +26,7 @@ module Tomasulo(
     logic [3:0] adder_cdb_tag;
     logic adder1_result_valid, adder2_result_valid, adder3_result_valid;
     logic [31:0] adder1_result, adder2_result, adder3_result;
+    logic adder1_isadd,adder2_isadd,adder3_isadd;
     
     //mem
     logic [31:0] mem_read_data1,mem_read_data2;
@@ -34,6 +35,7 @@ module Tomasulo(
     
     //multiplier
     logic multi1_start, multi2_start;
+    logic mulvalid1,divvalid1,mulvalid2,divvalid2;
     logic [31:0] multi1_SrcA, multi2_SrcA;
     logic [31:0] multi1_SrcB, multi2_SrcB;
     logic [3:0] multi1_tag, multi2_tag;
@@ -41,11 +43,16 @@ module Tomasulo(
     logic multi1_result_valid, multi2_result_valid;
     logic [31:0] multi1_result_lower, multi2_result_lower;
     logic [31:0] multi1_result_higher, multi2_result_higher;
+    logic [31:0] Quotient1,Quotient2;
+    logic [31:0] Remainder1,Remainder2;
+    logic multi1_ismultiply,multi2_ismultiply;
     
     //control logic
     logic Load_en,Store_en,Add_en,Multiply_en;
     logic [2:0] ALUControl;
     logic imminstr;
+    logic ismultiply;
+    logic isadd;
 
     //cdb
     logic cdb_valid;
@@ -104,11 +111,19 @@ module Tomasulo(
         .multi2_tag(multi2_tag_out),
         .multi1_valid(multi1_result_valid),
         .multi2_valid(multi2_result_valid),
+        .mulvalid1(mulvalid1),
+        .divvalid1(divvalid1),
+        .mulvalid2(mulvalid2),
+        .divvalid2(divvalid2),
         .mem_data1(mem_read_data1),
         .mem_data2(mem_read_data2),
         .mem_tag(mem_tag),
         .mem_valid1(mem_read_valid1),
         .mem_valid2(mem_read_valid2),
+        .Quotient1(Quotient1),
+        .Quotient2(Quotient2),
+        .Remainder1(Remainder1),
+        .Remainder2(Remainder2),
         .Data_out(cdb_data),
         .Tag_out(cdb_tag),
         .Data_valid(cdb_valid)
@@ -152,6 +167,8 @@ module Tomasulo(
         // Arithmetic
         .Add_en(Add_en),
         .Mul_en(Multiply_en),
+        .isadd(isadd),
+        .ismultiply(ismultiply),
         .adder1_start(adder1_start),
         .adder2_start(adder2_start),
         .adder3_start(adder3_start),
@@ -173,7 +190,13 @@ module Tomasulo(
         .multi1_tag(multi1_tag),
         .multi2_tag(multi2_tag),
         .A_stall(A_stall),
-
+        .adder1_isadd(adder1_isadd),
+        .adder2_isadd(adder2_isadd),
+        .adder3_isadd(adder3_isadd),
+        .multi1_ismultiply(multi1_ismultiply),
+        .multi2_ismultiply(multi2_ismultiply),
+        
+       
         // Load or Store
         .Load_en(Load_en),
         .Store_en(Store_en),
@@ -211,6 +234,7 @@ module Tomasulo(
         .Tag_in(adder1_tag),
         .cdb_tag(cdb_tag),
         .cdb_valid(cdb_valid),
+        .isadd(adder1_isadd),
         .Tag_out(adder1_tag_out),
         .result_valid(adder1_result_valid),
         .Result(adder1_result)
@@ -225,6 +249,7 @@ module Tomasulo(
         .Tag_in(adder2_tag),
         .cdb_tag(cdb_tag),
         .cdb_valid(cdb_valid),
+        .isadd(adder2_isadd),
         .Tag_out(adder2_tag_out),
         .result_valid(adder2_result_valid),
         .Result(adder2_result)
@@ -239,6 +264,7 @@ module Tomasulo(
         .Tag_in(adder3_tag),
         .cdb_tag(cdb_tag),
         .cdb_valid(cdb_valid),
+        .isadd(adder3_isadd),
         .Tag_out(adder3_tag_out),
         .result_valid(adder3_result_valid),
         .Result(adder3_result)
@@ -253,10 +279,15 @@ module Tomasulo(
         .Tag_in(multi1_tag),
         .cdb_tag(cdb_tag), 
         .cdb_valid(cdb_valid),
+        .ismultiply(multi1_ismultiply),
         .Tag_out(multi1_tag_out),
         .result_valid(multi1_result_valid),
         .Mul(multi1_result_lower),
-        .Mulh(multi1_result_higher)
+        .Mulh(multi1_result_higher),
+        .Quotient(Quotient1),
+        .Remainder(Remainder1),
+        .mulvalid(mulvalid1),
+        .divvalid(divvalid1)
     );
 
     
@@ -269,10 +300,15 @@ module Tomasulo(
         .Tag_in(multi2_tag),
         .cdb_tag(cdb_tag), 
         .cdb_valid(cdb_valid),
+        .ismultiply(multi2_ismultiply),
         .Tag_out(multi2_tag_out),
         .result_valid(multi2_result_valid),
         .Mul(multi2_result_lower),
-        .Mulh(multi2_result_higher)
+        .Mulh(multi2_result_higher),
+        .Quotient(Quotient2),
+        .Remainder(Remainder2),
+        .mulvalid(mulvalid2),
+        .divvalid(divvalid2)
     );
     
         
@@ -323,7 +359,9 @@ module Tomasulo(
         .Load_en(Load_en), 
         .Store_en(Store_en), 
         .Add_en(Add_en), 
-        .Multiply_en(Multiply_en)
+        .Multiply_en(Multiply_en),
+        .ismultiply(ismultiply),
+        .isadd(isadd)
     );
     
     
