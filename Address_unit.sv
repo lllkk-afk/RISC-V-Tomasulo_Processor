@@ -61,14 +61,13 @@ module Address_unit(
             mem_read_data1 <= data;
             mem_read_valid1 <= 1;
         end
+        else if (load2_valid) begin
+            mem_read_data2 <= data;
+            mem_read_valid2 <= 1;
+        end
         
         if (mem_read_valid1 && cdb_valid && (cdb_tag == tag_out)) begin
             mem_read_valid1 <= 0;  
-        end
-        
-        if (load2_valid) begin
-            mem_read_data2 <= data;
-            mem_read_valid2 <= 1;
         end
         
         if (mem_read_valid2 && cdb_valid && (cdb_tag == tag_out)) begin

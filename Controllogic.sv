@@ -2,7 +2,6 @@
 
 module Controllogic(
     input  logic [31:0] Instr,
-    output logic [2:0] ALUControl,
     output logic [1:0] ImmSrc,
     output logic       Imminstr, // whether this is immediate instruction
     output logic Load_en, Store_en, Add_en, Multiply_en,
@@ -54,7 +53,7 @@ module Controllogic(
             end
 
             7'b0010011: begin  // I-type ALU
-                ALUOp = 2'b10;
+                ALUOp = 2'b11;
                 ImmSrc = 2'b00;
                 Imminstr = 1;
             end
@@ -81,35 +80,25 @@ module Controllogic(
         isadd      = 0;
 
         case(ALUOp)
-            2'b00:   ALUControl = 3'b000;  // ADD (用于 Load/Store)
-            2'b01:   ALUControl = 3'b001;  // SUB (用于 Branch)
             default: case(funct3)
                 3'b000: begin 
-                    if (Rtypesub) begin
-                        ALUControl = 3'b001; // SUB
+                    if (Rtypesub) begin //SUB
                         Add_en = 1; 
                         isadd      = 0;
                     end
-                    else if (funct7b0) begin
-                        ALUControl  = 3'b110; // MUL
+                    else if (funct7b0 & ALUOp ==2'b10) begin //MUL
                         Multiply_en = 1;
                         ismultiply = 1;
                     end
-                    else begin
-                        ALUControl = 3'b000; // ADD
+                    else begin  //ADD
                         Add_en = 1; 
                         isadd      = 1;
                     end
                 end
-                3'b010: ALUControl = 3'b101; // SLT
-                3'b110: ALUControl = 3'b011; // OR               
-                3'b111: ALUControl = 3'b010; // AND
                 3'b100: begin                //DIV
-                        ALUControl = 3'b111;
                         Multiply_en = 1;
                         ismultiply = 0;
                         end 
-                default: ALUControl = 3'bx;
             endcase
         endcase
 

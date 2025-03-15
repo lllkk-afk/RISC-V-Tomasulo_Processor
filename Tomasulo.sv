@@ -49,7 +49,6 @@ module Tomasulo(
     
     //control logic
     logic Load_en,Store_en,Add_en,Multiply_en;
-    logic [2:0] ALUControl;
     logic imminstr;
     logic ismultiply;
     logic isadd;
@@ -355,7 +354,6 @@ module Tomasulo(
         .Instr(instr),
         .ImmSrc(immsrc),
         .Imminstr(imminstr),
-        .ALUControl(ALUControl),
         .Load_en(Load_en), 
         .Store_en(Store_en), 
         .Add_en(Add_en), 

@@ -393,18 +393,16 @@ module ReservationStation(
             
             Load1_addr   <= 0;
             Load2_addr   <= 0;
-            Load1_valid  <= 0;
-            Load2_valid  <= 0;
             Store1_addr  <= 0;
             Store2_addr  <= 0;
             Store1_valid <= 0;
             Store2_valid <= 0;
+            Load1_valid  <= 0;  
+            Load2_valid  <= 0;  
 
         end
         // -------------------- Issue ------------------------
         else begin    
-            Load1_valid  <= 0;
-            Load2_valid  <= 0;
             Store1_valid <= 0;
             Store2_valid <= 0;    
             pop          <= 0;    
@@ -516,6 +514,12 @@ module ReservationStation(
                 if (LRS[j].Tag == cdb_tag && cdb_valid) begin
                     LRS[j].Busy <= 0;
                     LRS[j].Fired <= 0;
+                    if (j == 0) begin
+                        Load1_valid  <= 0;  
+                    end
+                    else begin
+                        Load2_valid  <= 0;  
+                    end
                 end
             end
                 
