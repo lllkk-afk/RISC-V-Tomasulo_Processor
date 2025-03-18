@@ -41,6 +41,16 @@ module Multiplier(
             A                <= 0;
             SrcA_sign        <= 0;
             SrcB_sign        <= 0;
+            q0               <= 0;
+            n                <= 6'd0;   
+            result_valid     <= 0;
+            mulvalid         <= 0;
+            divvalid         <= 0;
+            Quotient         <= '0;  
+            Remainder        <= '0; 
+            Tag_out          <= '0;
+            Mul              <= '0;
+            Mulh             <= '0;
         end
         else begin
             case (state)
@@ -52,7 +62,7 @@ module Multiplier(
                         A_new<= 0;
                         q0   <= 0;
                         n    <= 6'd32;   
-                        result_valid <= 0;
+                        result_valid  <= 0;
                         state <= MUL; 
                         mulvalid <= 0;
                         divvalid <= 0;

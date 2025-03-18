@@ -20,6 +20,9 @@ module FIFO #(
         if (reset) begin
             head <= 0;
             tail <= 0;
+            for (int i = 0; i < FIFO_DEPTH; i++) begin
+                fifo_mem[i] <= '0; 
+            end
         end
         else begin
             if (push) begin

@@ -116,13 +116,53 @@ module ReservationStation(
     logic wasbusy,empty;
     assign empty = ({~ARS[2].Busy,~ARS[1].Busy,~ARS[0].Busy }== 3'b111) & ({~MRS[1].Busy,~MRS[0].Busy} == 2'b11) & ({~LRS[1].Busy,~LRS[0].Busy} == 2'b11) & ({~SRS[1].Busy,~SRS[0].Busy} == 2'b11);;
     
-    integer i,j;
+    logic cdb_active;
+    always_comb begin
+        cdb_active = 0;
+        for (int i = 0; i < 32; i++) begin
+            if (RegStat[i].Qi == cdb_tag && cdb_valid)
+                cdb_active = 1;
+        end
+    end
+    
+    logic valid;
+    assign valid = !((rs == 0) & (rt == 0) & (rd == 0));
+    logic done_reg;
+
+    
+    //Update RegStat
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
-            for (i = 0; i < 3; i++) begin
+            for (int k = 0; k < 32; k++) begin
+                RegStat[k] <= '{default: '0}; 
+            end 
+        end
+        else begin
+            if (cdb_active) begin
+                for (int k = 0; k < 32; k ++ ) begin
+                    if (RegStat[k].Qi == cdb_tag && cdb_valid) begin
+                        RegStat[k].Qi   <= 0;                  
+                    end
+                end
+            end
+            if (Add_en & A_alloc != 3) begin
+                RegStat[rd].Qi <= ARS[A_alloc].Tag;   
+            end
+            else if (Mul_en & M_alloc != 3) begin
+                RegStat[rd].Qi <= MRS[M_alloc].Tag;
+            end
+            else if (Load_en & L_alloc != 3) begin
+                RegStat[rd].Qi <= LRS[L_alloc].Tag;
+            end
+        end
+    end
+    
+    always_ff @(posedge clk or posedge reset) begin
+        if (reset) begin
+            for (int i = 0; i < 3; i++) begin
                 ARS[i] <= '{Tag: ADD1 + i, default: '0}; 
             end
-            for (i = 0; i < 2; i++) begin
+            for (int i = 0; i < 2; i++) begin
                 MRS[i] <= '{Tag: MUL1 + i, default: '0};
                 LRS[i] <= '{Tag: LOAD1 + i, default: '0}; 
                 SRS[i] <= '{Tag: STORE1 + i, default: '0}; 
@@ -158,6 +198,9 @@ module ReservationStation(
             
             wasbusy                     <= 0;
             done                        <= 0;
+            done_reg                    <= 0;
+            Reg_writeaddr               <= '0;
+            Reg_writedata               <= '0;
         end 
         
         else begin
@@ -173,8 +216,11 @@ module ReservationStation(
                 wasbusy                                  <= 1;
             end
             
-            done                                        <= wasbusy & empty;
-            if (Add_en) begin
+            done_reg                                       <= wasbusy & empty;
+            if (done_reg) begin // done is a sticky signal
+                done <= 1;
+            end
+            if (Add_en & valid) begin
                 if (A_alloc != 3) begin
                     if (RegStat[rs].Qi != 0)
                         ARS[A_alloc].Qj <= RegStat[rs].Qi; 
@@ -197,10 +243,9 @@ module ReservationStation(
                     end         
                     ARS[A_alloc].isadd <= isadd;
                     ARS[A_alloc].Busy <= 1;
-                    RegStat[rd].Qi <= ARS[A_alloc].Tag;
                 end
             end
-            else if (Mul_en) begin
+            else if (Mul_en & valid) begin
                 if (M_alloc != 3) begin
                     if (RegStat[rs].Qi != 0)
                         MRS[M_alloc].Qj <= RegStat[rs].Qi; 
@@ -215,12 +260,12 @@ module ReservationStation(
                         MRS[M_alloc].Qk <= 0;
                     end   
                     MRS[M_alloc].Busy <= 1;
-                    RegStat[rd].Qi <= MRS[M_alloc].Tag;
+                   
                     MRS[M_alloc].ismultiply <= ismultiply;
                 end
             end 
             
-            if (Load_en) begin
+            if (Load_en & valid) begin
                 if (L_alloc != 3) begin                 
                     if (RegStat[rs].Qi != 0)
                         LRS[L_alloc].Qj <= RegStat[rs].Qi; 
@@ -232,13 +277,12 @@ module ReservationStation(
                     LRS[L_alloc].Addr   <= ext_imm; 
                     LRS[L_alloc].Busy   <= 1;
                     
-                    RegStat[rd].Qi     <= LRS[L_alloc].Tag;
                     
                     push_tag           <= LRS[L_alloc].Tag;
                     push               <= 1;
                 end   
             end
-            else if (Store_en) begin
+            else if (Store_en & valid) begin
                 if (S_alloc != 3) begin
                     if (RegStat[rs].Qi != 0)
                         SRS[S_alloc].Qj <= RegStat[rs].Qi; 
@@ -262,7 +306,7 @@ module ReservationStation(
             end
             // -------------------- Execute ------------------------               
            //add 
-            for (i = 0; i < 3; i ++) begin
+            for (int i = 0; i < 3; i ++) begin
                 if (!ARS[i].Fired & ARS[i].Qj == 0 & ARS[i].Qk == 0 & ARS[i].Busy) begin
                     case(i)
                         0:begin
@@ -295,7 +339,7 @@ module ReservationStation(
             end 
             
             //multiply 
-            for (i = 0; i < 2; i++) begin
+            for (int i = 0; i < 2; i++) begin
                 if (!MRS[i].Fired & MRS[i].Qj == 0 & MRS[i].Qk == 0 & MRS[i].Busy) begin
                     case (i)
                         0: begin
@@ -318,7 +362,7 @@ module ReservationStation(
                 end
             end
 
-           for (j = 0; j < 2; j ++)begin
+           for (int j = 0; j < 2; j ++)begin
                 if (!LRS[j].Fired & LRS[j].Qj == 0 & front_tag == LRS[j].Tag & LRS[j].Busy) begin
                     if (j == 0) begin
                         Load1_addr   <= LRS[j].Vj + LRS[j].Addr;  
@@ -336,7 +380,7 @@ module ReservationStation(
                 end        
             end
 
-            for (j = 0; j < 2; j++) begin
+            for (int j = 0; j < 2; j++) begin
                 if (SRS[j].Qj == 0 && front_tag == SRS[j].Tag & SRS[j].Busy) begin
                     if (j == 0) begin
                         Store1_addr  <= SRS[j].Vj + SRS[j].Addr; 
@@ -355,16 +399,15 @@ module ReservationStation(
             end                  
             // -------------------- Write result ------------------------    
             
-            for (i = 0; i < 32; i ++ ) begin
+            for (int i = 0; i < 32; i ++ ) begin
                 if (RegStat[i].Qi == cdb_tag && cdb_valid) begin
                     Reg_writeaddr   <= i;
                     Reg_writedata   <= cdb_data;
-                    Reg_writevalid  <= 1;
-                    RegStat[i].Qi   <= 0;                  
+                    Reg_writevalid  <= 1;         
                 end
             end
             
-            for (i = 0; i < 3; i ++ ) begin
+            for (int i = 0; i < 3; i ++ ) begin
                 if (ARS[i].Qj == cdb_tag && cdb_valid) begin
                     ARS[i].Vj <= cdb_data;
                     ARS[i].Qj <= 0;
@@ -379,7 +422,7 @@ module ReservationStation(
                 end
             end
                
-            for (i = 0; i < 2; i ++ ) begin
+            for (int i = 0; i < 2; i ++ ) begin
                 if (MRS[i].Qj == cdb_tag && cdb_valid) begin
                     MRS[i].Vj <= cdb_data;
                     MRS[i].Qj <= 0;
@@ -394,7 +437,7 @@ module ReservationStation(
                 end       
             end      
             
-            for (j = 0; j < 2; j ++ ) begin
+            for (int j = 0; j < 2; j ++ ) begin
                 if (LRS[j].Qj == cdb_tag && cdb_valid) begin
                     LRS[j].Vj <= cdb_data;
                     LRS[j].Qj <= 0;
@@ -415,7 +458,7 @@ module ReservationStation(
                 end
             end
                 
-            for (j = 0; j < 2; j ++ ) begin
+            for (int j = 0; j < 2; j ++ ) begin
                 if (SRS[j].Qj == cdb_tag && cdb_valid) begin
                     SRS[j].Vj <= cdb_data;
                     SRS[j].Qj <= 0;

@@ -3,9 +3,9 @@
 // Company: 
 // Engineer: 
 // 
-// Create Date: 02/04/2025 02:10:51 AM
+// Create Date: 03/18/2025 10:51:36 PM
 // Design Name: 
-// Module Name: PC_logic
+// Module Name: test_top
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
@@ -20,20 +20,18 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module PC_logic(
-    input logic clk,reset,
-    input logic A_stall,
-    input logic LS_stall,
-    output logic [31:0] PC
+module test_top(
+    input  logic         clk,        // fundamental clock 1MHz
+    input  logic         reset,
+    output logic         done
+);
+
+  Tomasulo_top tomasulo_top(
+      .clk(clk),
+      .reset(reset),
+      .reg_addr(),
+      .reg_data(),
+      .done(done)
     );
-    
-    always_ff @(posedge clk or posedge reset) begin
-        if (reset) begin
-            PC <= 32'h00000000;
-        end
-        else begin
-            PC <= (A_stall|LS_stall) ? PC : PC + 32'h00000004;
-        end
-    end
     
 endmodule

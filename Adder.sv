@@ -18,6 +18,7 @@ module Adder(
         if (reset) begin
             result_valid  <= 0;
             Result        <= 0;  
+            Tag_out       <= 0;
         end
         else begin
             if (start) begin

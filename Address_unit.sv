@@ -30,7 +30,10 @@ module Address_unit(
     
     //arbitrator
     always_comb begin
-
+        addr         = '0;
+        writedata    = '0;
+        tag_out      = '0;
+        write_enable = 0;
         write_enable = 0;
         
         if (load1_valid) begin

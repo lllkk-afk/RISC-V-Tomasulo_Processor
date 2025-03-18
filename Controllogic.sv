@@ -14,6 +14,7 @@ module Controllogic(
     logic       funct7b5;
     logic       op5;
     logic [6:0] funct7;
+    logic       funct7b0;
 
     assign opcode   = Instr[6:0];
     assign funct3   = Instr[14:12];

@@ -1,24 +1,15 @@
-module Top_Nexys_tb;
+module test_sim;
 
     // Testbench Signals
     reg clk;
     reg reset;
-    reg btnU, btnC;
-    wire [15:0] led;
-    wire dp;
-    wire [7:0] anode;
-    wire [6:0] cathode;  
+    wire done;
 
     // Instantiate DUT (Device Under Test)
-    Top_Nexys dut (
+    test_top dut (
         .clk(clk),
         .reset(reset),
-        .btnU(btnU),
-        .btnC(btnC),
-        .led(led),
-        .dp(dp),
-        .anode(anode),
-        .cathode(cathode)
+        .done(done)
     );
 
     // Clock Generation (100MHz)
@@ -27,15 +18,13 @@ module Top_Nexys_tb;
      initial begin
     // 初始化信号
     clk = 0;
-    btnU = 0;
-    btnC = 0;
-    reset = 1;
-    #15
     reset = 0;
+    #15
+    reset = 1;
     
     // 保持复位一段时间
     #10;
-    reset = 1;
+    reset = 0;
   end
 
 
