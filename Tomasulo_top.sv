@@ -21,7 +21,10 @@
 
 
 module Tomasulo_top(
-    input clk, reset
+    input clk, reset,
+    input [4:0] reg_addr,
+    output [31:0] reg_data,
+    output done
     );
     
     logic [31:0] PC, Instr;
@@ -44,8 +47,11 @@ module Tomasulo_top(
         .clk(clk), 
         .reset(reset),
         .instr(Instr),
+        .reg_addr(reg_addr),
+        .reg_data(reg_data),
         .A_stall(A_stall),
-        .LS_stall(LS_stall)  
+        .LS_stall(LS_stall),
+        .done(done)  
     );
     
 endmodule

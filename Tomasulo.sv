@@ -3,7 +3,10 @@
 module Tomasulo(
     input logic clk, reset,
     input logic [31:0] instr,
-    output logic A_stall,LS_stall 
+    input logic [4:0] reg_addr,//for Board display,
+    output logic [31:0] reg_data,
+    output logic A_stall,LS_stall,
+    output logic done 
     );
     
     typedef struct packed{
@@ -212,7 +215,9 @@ module Tomasulo(
         .cdb_data(cdb_data),
         
         //immediate
-        .imminstr(imminstr)
+        .imminstr(imminstr),
+        
+        .done(done)
     );
     
     FIFO #(.FIFO_DEPTH(4), .TAG_WIDTH(4)) fifo (
@@ -347,7 +352,9 @@ module Tomasulo(
         .readdata1(read_data1),
         .readdata2(read_data2),
         .Lreaddata1(Lread_data1),
-        .Lreaddata2(Lread_data2)
+        .Lreaddata2(Lread_data2),
+        .reg_addr(reg_addr),
+        .reg_data(reg_data)
     );
     
     Controllogic conlogic(

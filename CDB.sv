@@ -53,7 +53,7 @@ always_ff @(posedge clk or posedge reset) begin
                 Tag_out    <= multi1_tag;
                 Data_valid <= 1;
             end 
-            else begin 
+            else if (divvalid1) begin 
                 Data_out   <= Quotient1; // Lower part used as default
                 Tag_out    <= multi1_tag;
                 Data_valid <= 1;
@@ -65,7 +65,7 @@ always_ff @(posedge clk or posedge reset) begin
                 Tag_out    <= multi2_tag;
                 Data_valid <= 1;
             end 
-            else begin 
+            else if (divvalid2) begin 
                 Data_out   <= Quotient2; // Lower part used as default
                 Tag_out    <= multi2_tag;
                 Data_valid <= 1;

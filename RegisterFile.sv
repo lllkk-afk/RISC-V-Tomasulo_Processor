@@ -11,8 +11,10 @@ module RegisterFile(
     input  logic [31:0] writedata,
     output logic [31:0] readdata1,
     output logic [31:0] readdata2,
-    output  logic [ 31:0] Lreaddata1,
-    output  logic [ 31:0] Lreaddata2
+    output logic [31:0] Lreaddata1,
+    output logic [31:0] Lreaddata2,
+    input  logic [ 4:0] reg_addr,
+    output logic [31:0] reg_data
     );
     
     logic [31:0] reg_file [31:0];
@@ -22,6 +24,7 @@ module RegisterFile(
     assign readdata2 = (readaddr2 != 0) ? reg_file[readaddr2] : 0;
     assign Lreaddata1 = (Lreadaddr1 != 0) ? reg_file[Lreadaddr1] : 0;  
     assign Lreaddata2 = (Lreadaddr2 != 0) ? reg_file[Lreadaddr2] : 0;
+    assign reg_data   = (reg_addr != 0) ? reg_file[reg_addr] : 0;
     
 	always_ff @(negedge clk)
 	  if (RegWrite) reg_file[writeaddr] <= writedata;	 
