@@ -47,41 +47,36 @@ ADDI x6, x0, 6       0x00600313   # x6 = 6 (This one should execute first)
 SUB  x4, x3, x2      0x40218233   # x4 = x3 - x2 = -4 - 7 = -11
 
 ## Testcase 6 (Correct! Mix of ADD, SUB, MUL, and DIV)
+ADDI x1, x0, 10     0x00a00093  # x1 = 10
+ADDI x2, x0, 3      0x00300113  # x2 = 3
+ADDI x3, x1, 4      0x00408193  # x3 = x1 + 4 = 14  
+ADDI x6, x0, 7      0x00700313  # x6 = 7
+ADD  x4, x3, x2     0x00218233  # x4 = x3 + x2 = 14 + 3 = 17 
+SUB  x5, x4, x1     0x401202b3  # x5 = x4 - x1 = 17 - 10 = 7  
+MUL  x7, x3, x2     0x022183b3  # x7 = x3 * x2 = 14 * 3 = 42  
+DIV  x8, x7, x1     0x0213c433  # x8 = x7 / x1 = 42 / 10 = 4 
+SUB  x9, x5, x6     0x4072c4b3  # x9 = x5 - x6 = 7 - 7 = 0 
+MUL  x10, x9, x2    0x02248533  # x10 = x9 * x2 = 0 * 3 = 0 
+DIV  x11, x10, x1   0x021545b3  # x11 = x10 / x1 = 0 / 10 = 0  
+
+## Testcase 7 (Correct! Advanced & Most Comprehensive)
 ADDI x1, x0, 10      0x00a00093   # x1 = 10
-ADDI x2, x0, 3       0x00300113   # x2 = 3
-ADDI x3, x1, 4       0x00408193   # x3 = x1 + 4 = 14  
-ADDI x6, x0, 7       0x00700313   # x6 = 7
-ADD  x4, x3, x2      0x00218233   # x4 = x3 + x2 = 14 + 3 = 17 
-SUB  x5, x4, x1      0x401202b3   # x5 = x4 - x1 = 17 - 10 = 7  
-MUL  x7, x3, x2      0x022183b3   # x7 = x3 * x2 = 14 * 3 = 42  
-DIV  x8, x7, x1      0x0213c433   # x8 = x7 / x1 = 42 / 10 = 4 
-SUB  x9, x5, x6      0x4072c4b3   # x9 = x5 - x6 = 7 - 7 = 0 
-MUL  x10, x9, x2     0x02248533   # x10 = x9 * x2 = 0 * 3 = 0 
-DIV  x11, x10, x1    0x021545b3   # x11 = x10 / x1 = 0 / 10 = 0
-
-ADDI x1, x0, 10     0x00a00093
-ADDI x2, x0, 4       0x00400113
-ADDI x3, x0, 100    0x06400193
-ADD  x4, x2, x3      0x00310233
-ADD  x5, x1, x2     0x002082b3
-SW   x1, 0(x3)        0x0011a023
-SW   x2, 4(x3)       0x0021a223
-LW   x6, 0(x3)       0x0001a303
-LW   x7, 4(x3)       0x0041a383
-ADD  x8, x6, x7      0x00730433
-SUB  x9, x8, x2      0x402404b3
-MUL  x10, x9, x2    0x02248533
-DIV  x11, x10, x2   0x022545b3
-MUL x12, x9,x10    0x02a48633
-ADD  x13, x6, x7    0x007306b3
-ADDI x14, x0, -5      0xffb00713
-ADD  x15, x14, x1    0x001707b3
-SUB  x16, x14, x2     0x40270833
-MUL  x17, x14, x2    0x022708b3
-DIV  x18, x17, x2    0x0228c933 
-
-UROP run on board. VS. FYP software
-https://github.com/NUS-CG3207/labs
-tell the story, FYP + hardware
-IEEE 2 colomn
-riscv one line introduction good enough
+ADDI x2, x0, 4       0x00400113   # x2 = 4
+ADDI x3, x0, 100     0x06400193   # x3 = 100
+ADD  x4, x2, x3      0x00310233   # x4 = x2 + x3 = 4 + 100 = 104
+ADD  x5, x1, x2      0x002082b3   # x5 = x1 + x2 = 10 + 4 = 14
+SW   x1, 0(x3)       0x0011a023   # memory[100] = 10
+SW   x2, 4(x3)       0x0021a223   # memory[104] = 4
+LW   x6, 0(x3)       0x0001a303   # x6 = memory[100] = 10
+LW   x7, 4(x3)       0x0041a383   # x7 = memory[104] = 4
+ADD  x8, x6, x7      0x00730433   # x8 = x6 + x7 = 10 + 4 = 14
+SUB  x9, x8, x2      0x402404b3   # x9 = x8 - x2 = 14 - 4 = 10
+MUL  x10, x9, x2     0x02248533   # x10 = x9 * x2 = 10 * 4 = 40
+DIV  x11, x10, x2    0x022545b3   # x11 = x10 / x2 = 40 / 4 = 10
+MUL  x12, x9, x10    0x02a48633   # x12 = x9 * x10 = 10 * 40 = 400
+ADD  x13, x6, x7     0x007306b3   # x13 = x6 + x7 = 10 + 4 = 14
+ADDI x14, x0, -5      0xffb00713   # x14 = -5
+ADD  x15, x14, x1    0x001707b3   # x15 = x14 + x1 = -5 + 10 = 5
+SUB  x16, x14, x2    0x40270833   # x16 = x14 - x2 = -5 - 4 = -9
+MUL  x17, x14, x2    0x022708b3   # x17 = x14 * x2 = -5 * 4 = -20
+DIV  x18, x17, x2    0x0228c933   # x18 = x17 / x2 = -20 / 4 = -5
