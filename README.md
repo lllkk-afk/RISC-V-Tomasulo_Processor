@@ -60,23 +60,23 @@ MUL  x10, x9, x2    0x02248533  # x10 = x9 * x2 = 0 * 3 = 0
 DIV  x11, x10, x1   0x021545b3  # x11 = x10 / x1 = 0 / 10 = 0  
 
 ## Testcase 7 (Correct! Advanced & Most Comprehensive)
-ADDI x1, x0, 10      0x00a00093   # x1 = 10
+ADDI x1, x0, 10      0x00a00093   # x1 = 10  → (Immediate Instruction)
 ADDI x2, x0, 4       0x00400113   # x2 = 4
 ADDI x3, x0, 100     0x06400193   # x3 = 100
-ADD  x4, x2, x3      0x00310233   # x4 = x2 + x3 = 4 + 100 = 104
-ADD  x5, x1, x2      0x002082b3   # x5 = x1 + x2 = 10 + 4 = 14
-SW   x1, 0(x3)       0x0011a023   # memory[100] = 10
+ADD  x4, x2, x3      0x00310233   # x4 = x2 + x3 = 4 + 100 = 104  → (Has dependencies and must wait for the last two instructions to complete)
+ADD  x5, x1, x2      0x002082b3   # x5 = x1 + x2 = 10 + 4 = 14  → (NO dependency, can execute first)
+SW   x1, 0(x3)       0x0011a023   # memory[100] = 10  → (Store to an address with offset)
 SW   x2, 4(x3)       0x0021a223   # memory[104] = 4
-LW   x6, 0(x3)       0x0001a303   # x6 = memory[100] = 10
+LW   x6, 0(x3)       0x0001a303   # x6 = memory[100] = 10  → (Load from an address with offset)
 LW   x7, 4(x3)       0x0041a383   # x7 = memory[104] = 4
-ADD  x8, x6, x7      0x00730433   # x8 = x6 + x7 = 10 + 4 = 14
-SUB  x9, x8, x2      0x402404b3   # x9 = x8 - x2 = 14 - 4 = 10
-MUL  x10, x9, x2     0x02248533   # x10 = x9 * x2 = 10 * 4 = 40
-DIV  x11, x10, x2    0x022545b3   # x11 = x10 / x2 = 40 / 4 = 10
-MUL  x12, x9, x10    0x02a48633   # x12 = x9 * x10 = 10 * 40 = 400
+ADD  x8, x6, x7      0x00730433   # x8 = x6 + x7 = 10 + 4 = 14  → (Addition Computation)
+SUB  x9, x8, x2      0x402404b3   # x9 = x8 - x2 = 14 - 4 = 10  → (Subtraction Computation)
+MUL  x10, x9, x2     0x02248533   # x10 = x9 * x2 = 10 * 4 = 40  → (Multiplication Computation)
+DIV  x11, x10, x2    0x022545b3   # x11 = x10 / x2 = 40 / 4 = 10  → (Division Computation)
+MUL  x12, x9, x10    0x02a48633   # x12 = x9 * x10 = 10 * 40 = 400  → (Has dependencies and must wait for many cycles)
 ADD  x13, x6, x7     0x007306b3   # x13 = x6 + x7 = 10 + 4 = 14
 ADDI x14, x0, -5     0xffb00713   # x14 = -5
-ADD  x15, x14, x1    0x001707b3   # x15 = x14 + x1 = -5 + 10 = 5
-SUB  x16, x14, x2    0x40270833   # x16 = x14 - x2 = -5 - 4 = -9
-MUL  x17, x14, x2    0x022708b3   # x17 = x14 * x2 = -5 * 4 = -20
-DIV  x18, x17, x2    0x0228c933   # x18 = x17 / x2 = -20 / 4 = -5
+ADD  x15, x14, x1    0x001707b3   # x15 = x14 + x1 = -5 + 10 = 5  → (Signed Addition Computation)
+SUB  x16, x14, x2    0x40270833   # x16 = x14 - x2 = -5 - 4 = -9  → (Signed Subtraction Computation)
+MUL  x17, x14, x2    0x022708b3   # x17 = x14 * x2 = -5 * 4 = -20  → (Signed Multiplication Computation)
+DIV  x18, x17, x2    0x0228c933   # x18 = x17 / x2 = -20 / 4 = -5  → (Signed Division Computation)
