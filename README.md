@@ -59,6 +59,27 @@ SUB  x9, x5, x6      0x4072c4b3   # x9 = x5 - x6 = 7 - 7 = 0
 MUL  x10, x9, x2     0x02248533   # x10 = x9 * x2 = 0 * 3 = 0 
 DIV  x11, x10, x1    0x021545b3   # x11 = x10 / x1 = 0 / 10 = 0
 
+ADDI x1, x0, 10     0x00a00093
+ADDI x2, x0, 4       0x00400113
+ADDI x3, x0, 100    0x06400193
+ADD  x4, x2, x3      0x00310233
+ADD  x5, x1, x2     0x002082b3
+SW   x1, 0(x3)        0x0011a023
+SW   x2, 4(x3)       0x0021a223
+LW   x6, 0(x3)       0x0001a303
+LW   x7, 4(x3)       0x0041a383
+ADD  x8, x6, x7      0x00730433
+SUB  x9, x8, x2      0x402404b3
+MUL  x10, x9, x2    0x02248533
+DIV  x11, x10, x2   0x022545b3
+MUL x12, x9,x10    0x02a48633
+ADD  x13, x6, x7    0x007306b3
+ADDI x14, x0, -5      0xffb00713
+ADD  x15, x14, x1    0x001707b3
+SUB  x16, x14, x2     0x40270833
+MUL  x17, x14, x2    0x022708b3
+DIV  x18, x17, x2    0x0228c933 
+
 UROP run on board. VS. FYP software
 https://github.com/NUS-CG3207/labs
 tell the story, FYP + hardware
