@@ -224,6 +224,10 @@ module ReservationStation(
                 if (A_alloc != 3) begin
                     if (RegStat[rs].Qi != 0)
                         ARS[A_alloc].Qj <= RegStat[rs].Qi; 
+                    else if (cdb_tag == rs && cdb_valid) begin //data forwarding
+                        ARS[A_alloc].Vj <= cdb_data; 
+                        ARS[A_alloc].Qj <= 0;
+                    end 
                     else begin
                         ARS[A_alloc].Vj <= read_data1;
                         ARS[A_alloc].Qj <= 0;
@@ -235,6 +239,10 @@ module ReservationStation(
                     else begin
                         if (RegStat[rt].Qi != 0) begin// if imminstr, this one should not be checked! if (RegStat[rt].Qi != 0)
                             ARS[A_alloc].Qk <= RegStat[rt].Qi;  
+                        end 
+                        else if (cdb_tag == rt && cdb_valid) begin //data forwarding
+                            ARS[A_alloc].Vk <= cdb_data; 
+                            ARS[A_alloc].Qk <= 0;
                         end 
                         else begin
                             ARS[A_alloc].Vk <= read_data2;
@@ -249,12 +257,20 @@ module ReservationStation(
                 if (M_alloc != 3) begin
                     if (RegStat[rs].Qi != 0)
                         MRS[M_alloc].Qj <= RegStat[rs].Qi; 
+                    else if (cdb_tag == rs && cdb_valid) begin //data forwarding
+                        MRS[M_alloc].Vj <= cdb_data; 
+                        MRS[M_alloc].Qj <= 0;
+                    end 
                     else begin
                         MRS[M_alloc].Vj <= read_data1;
                         MRS[M_alloc].Qj <= 0;
                     end
                     if (RegStat[rt].Qi != 0)
                         MRS[M_alloc].Qk <= RegStat[rt].Qi;  
+                    else if (cdb_tag == rt && cdb_valid) begin //data forwarding
+                        MRS[M_alloc].Vk <= cdb_data; 
+                        MRS[M_alloc].Qk <= 0;
+                    end 
                     else begin
                         MRS[M_alloc].Vk <= read_data2;
                         MRS[M_alloc].Qk <= 0;
@@ -269,6 +285,10 @@ module ReservationStation(
                 if (L_alloc != 3) begin                 
                     if (RegStat[rs].Qi != 0)
                         LRS[L_alloc].Qj <= RegStat[rs].Qi; 
+                    else if (cdb_tag == rs && cdb_valid) begin //data forwarding
+                        LRS[L_alloc].Vj <= cdb_data; 
+                        LRS[L_alloc].Qj <= 0;
+                    end 
                     else begin
                         LRS[L_alloc].Vj <= Lread_data1; 
                         LRS[L_alloc].Qj <= 0;
@@ -284,16 +304,22 @@ module ReservationStation(
             end
             else if (Store_en & valid) begin
                 if (S_alloc != 3) begin
-                    if (RegStat[rs].Qi != 0)
+                    if (RegStat[rs].Qi != 0 && cdb_tag != rs)
                         SRS[S_alloc].Qj <= RegStat[rs].Qi; 
-                    else begin
+                    else if (cdb_tag == rs && cdb_valid) begin //data forwarding
+                        SRS[S_alloc].Vj <= cdb_data; 
+                        SRS[S_alloc].Qj <= 0;
+                    end else begin
                         SRS[S_alloc].Vj <= Lread_data1; 
                         SRS[S_alloc].Qj <= 0;
                     end
                     
                     if (RegStat[rt].Qi != 0)
                         SRS[S_alloc].Qk <= RegStat[rt].Qi; 
-                    else begin
+                    else if (cdb_tag == rt && cdb_valid) begin //data forwarding
+                        SRS[S_alloc].Vk <= cdb_data; 
+                        SRS[S_alloc].Qk <= 0;
+                    end else begin
                         SRS[S_alloc].Vk <= Lread_data2; 
                         SRS[S_alloc].Qk <= 0;
                     end

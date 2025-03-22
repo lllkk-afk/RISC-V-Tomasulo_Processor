@@ -27,6 +27,6 @@ module RegisterFile(
     assign reg_data   = (reg_addr != 0) ? reg_file[reg_addr] : 0;
     
 	always_ff @(negedge clk)
-	  if (RegWrite) reg_file[writeaddr] <= writedata;	 
-	
+	  if (RegWrite && writeaddr != 0) reg_file[writeaddr] <= writedata;	 
+	  else reg_file[0] <= '0;
 endmodule
